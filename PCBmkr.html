@@ -1,0 +1,1742 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schematic & PCB Maker | CalypsoLabs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="icon" href="https://store.calypsolabs.com.mx/assets/images/CalypsoLabs_Logo.svg">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.157.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.157.0/examples/jsm/"
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --calypso-dark-bg: #0f172a; /* slate-900 */
+            --calypso-panel-bg: rgba(25, 28, 32, 0.75);
+            --calypso-border: rgba(0, 255, 127, 0.2);
+            --calypso-text-primary: #e2e8f0; /* slate-200 */
+            --calypso-text-secondary: #94a3b8; /* slate-400 */
+            --calypso-accent: #00FF7F; /* Verde menta vibrante */
+            --calypso-accent-hover: #33FF99; /* Un tono más claro de menta */
+            --calypso-green: #22e584; /* green-500 */
+            --calypso-red: #ef4444; /* red-500 */
+
+            font-family: 'Inter', sans-serif;
+            color: var(--calypso-text-primary);
+        }
+
+        body {
+            background: radial-gradient(ellipse at 50% 20%, #192241 60%, #0f172a 100%);
+            margin: 0;
+            overflow: hidden;
+            min-height: 100vh;
+        }
+
+        .font-orbitron, h1, h2, h3, .orbitron {
+            font-family: 'Orbitron', 'Inter', sans-serif;
+            letter-spacing: 0.01em;
+        }
+
+        #app-container { display: flex; height: 100vh; width: 100vw; backdrop-filter: blur(0.8px); }
+        #sidebar {
+            width: 280px; background: rgba(30,41,59,0.92); border-right: 1.5px solid var(--calypso-border);
+            display: flex; flex-direction: column; color: var(--calypso-text-primary);
+            box-shadow: 2px 0 32px 0 rgba(22,170,255,0.08); backdrop-filter: blur(3px);
+        }
+        #sidebar-header {
+            padding: 0.75rem 1rem; border-bottom: 1px solid var(--calypso-border);
+            background: linear-gradient(90deg, rgba(22,170,255,0.16) 0%, transparent 100%);
+        }
+        #sidebar-header h1 {
+            font-family: 'Orbitron', sans-serif; font-size: 1.5rem; color: var(--calypso-accent);
+            text-shadow: 0 0 10px #16aaff77, 0 0 2px #fff; display: flex; align-items: center; gap: 0.5rem; letter-spacing: 0.06em;
+        }
+        #sidebar-header h1 svg, #sidebar-header h1 img { fill: var(--calypso-accent); filter: drop-shadow(0 0 6px #16aaff88); }
+        #sidebar-tabs {
+            display: flex; border-bottom: 1px solid var(--calypso-border);
+            background: linear-gradient(90deg, transparent 60%, rgba(22,170,255,0.08));
+        }
+        .sidebar-tab {
+            flex-grow: 1; padding: 0.75rem 0.5rem; text-align: center; cursor: pointer; background: transparent;
+            border: none; color: var(--calypso-text-secondary); font-weight: 700;
+            transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+            font-size: 0.9rem; font-family: 'Orbitron', sans-serif; letter-spacing: 0.05em; border-radius: 0;
+        }
+        .sidebar-tab:hover { background: rgba(22,170,255,0.07); color: var(--calypso-accent); box-shadow: 0 2px 16px -10px #16aaffcc; }
+        .sidebar-tab.active {
+            color: #fff; border-bottom: 2.5px solid var(--calypso-accent);
+            background: linear-gradient(90deg, var(--calypso-accent) 2%, transparent 120%);
+            box-shadow: 0 4px 18px -6px #16aaffcc; text-shadow: 0 0 4px #16aaff88;
+        }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-thumb { background: var(--calypso-border); border-radius: 4px; transition: background 0.18s; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--calypso-accent); }
+        ::-webkit-scrollbar-track { background: transparent; }
+
+        .sidebar-panel { padding: 1.2rem 1rem; overflow-y: auto; flex-grow: 1; background: rgba(30,41,59,0.9); }
+        .sidebar-panel h3 {
+            font-family: 'Orbitron', sans-serif; font-size: 1.05rem; margin-bottom: 0.75rem; color: var(--calypso-accent);
+            border-bottom: 1.5px solid var(--calypso-accent); padding-bottom: 0.5rem; letter-spacing: 0.06em;
+            text-shadow: 0 0 6px #16aaff22;
+        }
+
+        /* MAIN CONTENT */
+        #main-content { flex-grow: 1; display: flex; flex-direction: column; position: relative; background: rgba(12,16,28,0.99); }
+        #view-mode-toolbar { /* New toolbar for view mode switching */
+            padding: 0.5rem; background: rgba(15,23,42,0.97); border-bottom: 1px solid var(--calypso-border);
+            display: flex; align-items: center; justify-content: center; gap: 0.5rem; height: 49px;
+            box-shadow: 0 1.5px 14px -2px #16aaff11;
+        }
+        #view-mode-toolbar button {
+            background: rgba(30,41,59,0.9); color: var(--calypso-text-secondary); border: 1.5px solid var(--calypso-border);
+            padding: 0.4rem 0.8rem; border-radius: 0.3rem; cursor: pointer; font-size: 0.90rem; /* Adjusted font size */
+            font-family: 'Orbitron', 'Inter', sans-serif; font-weight: 600; height: 32px;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.18s, border 0.18s, color 0.18s, box-shadow 0.18s;
+        }
+        #view-mode-toolbar button:hover { background: var(--calypso-border); color: var(--calypso-accent); border-color: var(--calypso-accent); }
+        #view-mode-toolbar button.active {
+            background: var(--calypso-accent); color: #fff; border-color: var(--calypso-accent-hover);
+            box-shadow: 0 0 8px #16aaffcc; text-shadow: 0 0 4px #fff8;
+        }
+         /* Example button specific styling if needed, inherits most from above */
+        #mode-example {
+            /* Optional: slightly different color if not an "active" mode but an action */
+            /* background: var(--calypso-green); */
+        }
+
+
+        #canvas-toolbar { /* Existing toolbar, now context-sensitive */
+            padding: 0.5rem; background: rgba(30,41,59,0.97); border-bottom: 1px solid var(--calypso-border);
+            display: flex; align-items: center; gap: 0.5rem; height: 49px;
+            box-shadow: 0 1.5px 14px -2px #16aaff11;
+        }
+        #canvas-toolbar button, #canvas-toolbar select {
+            background: rgba(15,23,42,0.9); color: var(--calypso-text-secondary); border: 1.5px solid var(--calypso-border);
+            padding: 0.3rem 0.6rem; border-radius: 0.3rem; cursor: pointer; font-size: 0.92rem;
+            font-family: 'Orbitron', 'Inter', sans-serif; font-weight: 600; height: 32px;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.18s, border 0.18s, color 0.18s, box-shadow 0.18s;
+        }
+        #canvas-toolbar button:hover, #canvas-toolbar select:hover { background: var(--calypso-border); color: var(--calypso-accent); border-color: var(--calypso-accent); }
+        #canvas-toolbar button.active {
+            background: var(--calypso-accent); color: #fff; border-color: var(--calypso-accent-hover);
+            box-shadow: 0 0 8px #16aaffcc; text-shadow: 0 0 4px #fff8;
+        }
+        #canvas-toolbar button svg { fill: var(--calypso-text-secondary); margin-right: 0.15em; }
+        #canvas-toolbar button.active svg { fill: #fff; }
+        #canvas-toolbar button:hover svg { fill: var(--calypso-accent); }
+
+        .canvas-area { /* Common class for schematic, layout, 3D views */
+            flex-grow: 1; background: linear-gradient(135deg, #141a28 80%, #0f172a 100%);
+            position: relative; overflow: hidden; backdrop-filter: blur(1.5px);
+            /* Ensure it occupies the full space intended for canvas */
+            width: 100%; height: 100%;
+        }
+        #schematic-canvas-view, #layout-canvas-view, #three-canvas-container { display: none; /* Controlled by JS */ }
+        #schematic-canvas-view.active-view, #layout-canvas-view.active-view, #three-canvas-container.active-view { display: block; }
+
+
+        #schematic-svg-canvas, #layout-svg-canvas { width: 100%; height: 100%; }
+        .grab-cursor { cursor: grab; } .grabbing-cursor { cursor: grabbing; }
+        .crosshair-cursor { cursor: crosshair; } .pointer-cursor { cursor: pointer; }
+
+        .svg-element { transition: filter 0.1s; }
+        .svg-element.selected > :first-child, .svg-element path.selected, .svg-element circle.selected, .svg-element rect.selected, .svg-element text.selected {
+            filter: drop-shadow(0 0 12px var(--calypso-accent));
+            stroke: var(--calypso-accent) !important; stroke-width: 2.7px !important;
+        }
+        .svg-element:not(.no-hover):hover > :first-child,
+        .svg-element path:not(.no-hover):hover, .svg-element circle:not(.no-hover):hover, .svg-element rect:not(.no-hover):hover {
+            filter: drop-shadow(0 0 4px var(--calypso-accent));
+        }
+        /* Specific for schematic symbols */
+        .schematic-symbol-pin { fill: var(--calypso-accent); cursor: crosshair; }
+        .schematic-symbol-pin:hover { r: 3.5px !important; fill: var(--calypso-accent-hover); }
+
+        .wire-segment { stroke: var(--calypso-green); stroke-width: 1.5; transition: stroke 0.1s; }
+        .wire-segment:hover { stroke: var(--calypso-accent-hover); stroke-width: 2.5; }
+        .wire-segment.selected { stroke: var(--calypso-accent) !important; stroke-width: 2.7px !important; filter: drop-shadow(0 0 8px var(--calypso-accent));}
+
+        .ratsnest-line { stroke: rgba(255,255,0,0.5); stroke-width: 0.5; stroke-dasharray: 2,2; pointer-events: none; }
+
+
+        #selection-rect {
+            position: absolute; border: 1.8px dashed var(--calypso-accent);
+            background: rgba(22,170,255,0.08); pointer-events: none; display: none; z-index: 100;
+        }
+
+        #three-canvas-container {
+            width: 100%; height: 100%;
+            z-index: 10; box-shadow: 0 0 40px 10px #16aaff12;
+        }
+        #three-canvas { width: 100% !important; height: 100% !important; }
+
+        #footer-status {
+            padding: 0.5rem 1rem; background: rgba(30,41,59,0.96); border-top: 1px solid var(--calypso-border);
+            font-size: 0.9rem; color: var(--calypso-text-secondary); display: flex; justify-content: space-between;
+            height: 33px; align-items: center; letter-spacing: 0.03em;
+        }
+
+        /* COMPONENT/SYMBOL/FOOTPRINT LIBRARY ITEM */
+        .library-item {
+            background: rgba(15,23,42,0.9); padding: 0.6rem; margin-bottom: 0.6rem; border: 1.5px solid var(--calypso-border);
+            border-radius: 0.33rem; cursor: grab; display: flex; align-items: center; gap: 0.65rem;
+            box-shadow: 0 2px 14px 0 #0ea5e911; transition: background 0.2s, border 0.18s;
+        }
+        .library-item:hover { background: #273349; border-color: var(--calypso-accent); box-shadow: 0 2px 16px 0 #16aaff33; }
+        .library-item:active { cursor: grabbing; background: var(--calypso-border); }
+        .library-item svg { width: 25px; height: 25px; fill: var(--calypso-accent); flex-shrink: 0; filter: drop-shadow(0 0 4px #16aaff55); }
+        .library-item span { font-size: 0.97rem; font-family: 'Orbitron', 'Inter', sans-serif; }
+
+        /* PROPERTY PANEL */
+        .property-group { margin-bottom: 0.85rem; }
+        .property-group label {
+            display: block; font-size: 0.81rem; color: var(--calypso-text-secondary); margin-bottom: 0.27rem;
+            font-family: 'Orbitron', 'Inter', sans-serif; letter-spacing: 0.03em;
+        }
+        .property-group input, .property-group select, .property-group textarea {
+            width: 100%; background: rgba(15,23,42,0.93); border: 1.5px solid var(--calypso-border);
+            padding: 0.45rem; border-radius: 0.25rem; color: var(--calypso-text-primary); font-size: 0.95rem;
+            transition: border 0.18s, box-shadow 0.16s;
+        }
+        .property-group input:focus, .property-group select:focus, .property-group textarea:focus {
+            outline: none; border-color: var(--calypso-accent); box-shadow: 0 0 0 2px #16aaff33;
+        }
+        .property-group input[readonly] { background: #273349; cursor: not-allowed; }
+        .hidden { display: none !important; }
+
+        /* TUTORIAL STYLES (largely unchanged) */
+        .tutorial-highlight { box-shadow: 0 0 0 3px var(--calypso-accent), 0 0 0 8px rgba(22,170,255,0.20); position: relative; z-index: 1001; border-radius: 5px; transition: box-shadow 0.3s; }
+        .tutorial-popover {
+            position: absolute; background: rgba(30,41,59,0.99); border: 1.5px solid var(--calypso-accent);
+            color: var(--calypso-text-primary); padding: 1.1rem; border-radius: 0.47rem;
+            box-shadow: 0 10px 15px -3px #0ea5e922, 0 4px 6px -2px #16aaff18;
+            z-index: 1002; width: 320px; font-size: 0.97rem;
+        }
+        .tutorial-popover h4 { font-family: 'Orbitron', sans-serif; color: var(--calypso-accent); margin-top: 0; margin-bottom: 0.6rem; text-shadow: 0 0 6px #16aaff22;}
+        .tutorial-popover p { margin-bottom: 1rem; line-height: 1.54; }
+        .tutorial-popover-nav { display: flex; justify-content: space-between; margin-top: 1.2rem; }
+        .tutorial-popover-nav button {
+            background: var(--calypso-accent); color: #fff; border: none; padding: 0.55rem 1.15rem; border-radius: 0.27rem;
+            cursor: pointer; font-size: 0.83rem; font-family: 'Orbitron', 'Inter', sans-serif; font-weight: 600;
+            transition: background 0.16s; box-shadow: 0 0 8px #16aaff33;
+        }
+        .tutorial-popover-nav button:hover { background: var(--calypso-accent-hover); }
+        .tutorial-popover-nav button.skip { background: var(--calypso-border); color: var(--calypso-text-secondary); }
+        .tutorial-popover-nav button.skip:hover { background: var(--calypso-text-secondary); color: var(--calypso-panel-bg); }
+    </style>
+</head>
+<body>
+    <div id="app-container">
+        <!-- Sidebar -->
+        <aside id="sidebar">
+            <div id="sidebar-header">
+                 <h1>
+                    <img src="https://store.calypsolabs.com.mx/assets/images/CalypsoLabs_Logo.svg" style="height: 128px;">
+                    Maker Suite
+                </h1>
+                <p>Comprende las bases para: Esquemáticos, Layout's, Guerbers, CAM y mucho más! (<span style="text-decoration: underline;"><a href="https://www.kicad.org/">KiCAD</a></span>, <span style="text-decoration: underline;"><a href="https://easyeda.com/editor">EasyEDA</a></span>, <span style="text-decoration: underline;"> <a href="https://gerber-viewer.ucamco.com/">Gerber</a>)</span></p>
+            </div>
+            <div id="sidebar-tabs" title="Navegación principal: Cambia entre los paneles específicos del modo actual (Esquemático o PCB).">
+                <!-- Tabs will be dynamically named or filtered based on view mode -->
+                <button class="sidebar-tab active" data-tab="library" title="Panel de Biblioteca: Accede a Símbolos (Esquemático) o Huellas (PCB).">Biblioteca</button>
+                <button class="sidebar-tab" data-tab="layersOrNets" title="Panel de Capas (PCB) o Redes (Esquemático).">Capas</button>
+                <button class="sidebar-tab" data-tab="properties" title="Panel de Propiedades: Muestra y edita propiedades del elemento seleccionado.">Config</button>
+            </div>
+
+            <!-- Panels for Schematic Mode -->
+            <div id="symbol-library-panel" class="sidebar-panel hidden" data-view-mode="schematic">
+                <h3>Biblioteca de Símbolos</h3>
+                <div id="symbol-library-list">
+                    <!-- Schematic Symbols will be populated by JS -->
+                </div>
+            </div>
+            <div id="nets-panel" class="sidebar-panel hidden" data-view-mode="schematic">
+                <h3>Gestor de Redes (Nets)</h3>
+                <div id="net-list">
+                    <p class="text-slate-400 text-sm">Las redes aparecerán aquí a medida que conectes símbolos.</p>
+                </div>
+                 <button id="btn-update-layout-from-schematic" class="mt-4 w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 px-4 rounded text-sm">
+                    Actualizar PCB desde Esquemático
+                </button>
+            </div>
+
+            <!-- Panels for Layout (PCB) Mode -->
+            <div id="footprint-library-panel" class="sidebar-panel hidden" data-view-mode="layout">
+                <h3>Biblioteca de Huellas (Footprints)</h3>
+                <div id="footprint-library-list">
+                    <!-- Footprints will be populated by JS -->
+                </div>
+            </div>
+            <div id="layers-panel" class="sidebar-panel hidden" data-view-mode="layout">
+                <h3>Gestor de Capas</h3>
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between p-2 bg-slate-700/50 rounded">
+                        <label for="layer-top-copper" class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" id="layer-top-copper" checked class="form-checkbox h-4 w-4 text-sky-500 rounded bg-slate-800 border-slate-600 focus:ring-sky-500 focus:ring-offset-0">
+                            <span>Capa Superior (Cobre)</span>
+                        </label>
+                        <button title="Color de Capa" class="w-5 h-5 rounded border border-slate-500" style="background-color: var(--calypso-red);"></button>
+                    </div>
+                    <div class="flex items-center justify-between p-2 bg-slate-700/50 rounded">
+                         <label for="layer-bottom-copper" class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" id="layer-bottom-copper" checked class="form-checkbox h-4 w-4 text-sky-500 rounded bg-slate-800 border-slate-600 focus:ring-sky-500 focus:ring-offset-0">
+                            <span>Capa Inferior (Cobre)</span>
+                        </label>
+                        <button title="Color de Capa" class="w-5 h-5 rounded border border-slate-500" style="background-color: var(--calypso-green);"></button>
+                    </div>
+                    <div class="flex items-center justify-between p-2 bg-slate-700/50 rounded">
+                         <label for="layer-silk-top" class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" id="layer-silk-top" checked class="form-checkbox h-4 w-4 text-sky-500 rounded bg-slate-800 border-slate-600 focus:ring-sky-500 focus:ring-offset-0">
+                            <span>Serigrafía (Superior)</span>
+                        </label>
+                        <button title="Color de Capa" class="w-5 h-5 rounded border border-slate-500" style="background-color: #FFFFFF;"></button>
+                    </div>
+                </div>
+                <button class="mt-4 w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 px-4 rounded text-sm">
+                    + Añadir Capa (PCB)
+                </button>
+            </div>
+
+            <!-- Panel for 3D Options Mode -->
+            <div id="three-options-panel" class="sidebar-panel hidden" data-view-mode="3d">
+                <h3>Opciones de Vista 3D</h3>
+                <div class="property-group">
+                    <label for="three-color-pcb">Color PCB (Máscara)</label>
+                    <input type="color" id="three-color-pcb" value="#004d00">
+                </div>
+                <div class="property-group">
+                    <label for="three-color-component">Color Componentes</label>
+                    <input type="color" id="three-color-component" value="#2c3e50">
+                </div>
+                <div class="property-group">
+                    <label for="three-color-pad">Color Pads (SMD)</label>
+                    <input type="color" id="three-color-pad" value="#f0c040">
+                </div>
+                <div class="property-group">
+                    <label for="three-color-track">Color Pistas</label>
+                    <input type="color" id="three-color-track" value="#b87333">
+                </div>
+                <button id="btn-reload-3d-view" class="mt-4 w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 px-4 rounded text-sm">
+                    Recargar Vista 3D
+                </button>
+            </div>
+
+            <!-- Common Panel -->
+            <div id="properties-panel" class="sidebar-panel hidden">
+                <h3>Propiedades del Elemento</h3>
+                <div id="properties-content">
+                    <p class="text-slate-400 text-sm">Seleccione un elemento para ver/editar sus propiedades.</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main id="main-content">
+            <div id="view-mode-toolbar">
+                <button id="mode-schematic" title="Editor de Esquemático: Define la lógica de tu circuito conectando símbolos.">Esquemático</button>
+                <button id="mode-layout" title="Editor de PCB (Layout): Diseña la placa física, coloca huellas y rutea pistas.">PCB Layout</button>
+                <button id="mode-3d" title="Visor 3D: Visualiza tu PCB en tres dimensiones.">Vista 3D</button>
+                <button id="mode-example" title="Cargar Circuito de Ejemplo: Carga un diseño predefinido de MCU, ISP y LED.">EJEMPLO</button>
+            </div>
+
+            <div id="canvas-toolbar" title="Barra de Herramientas del Lienzo: Controles para interactuar con el área de diseño.">
+                <!-- Schematic Tools (data-tool-mode="schematic") -->
+                <button id="tool-schematic-select" data-tool-mode="schematic" title="Seleccionar Símbolo/Cable (S)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path d="M14.082 2.182a.5.5 0 0 1 .103.557L8.528 15.467a.5.5 0 0 1-.917-.007L5.57 10.694.803 8.652a.5.5 0 0 1-.006-.916l12.728-5.657a.5.5 0 0 1 .556.103z"/></svg>
+                </button>
+                <button id="tool-draw-wire" data-tool-mode="schematic" title="Dibujar Cable (W): Conecta pines de símbolos.">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path stroke="currentColor" stroke-width="1.5" d="M2 8 h12 M8 2 v12"/></svg> <!-- Simple plus for wire -->
+                </button>
+                 <!-- Layout Tools (data-tool-mode="layout") -->
+                <button id="tool-layout-select" data-tool-mode="layout" title="Seleccionar Huella/Pista (V)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path d="M14.082 2.182a.5.5 0 0 1 .103.557L8.528 15.467a.5.5 0 0 1-.917-.007L5.57 10.694.803 8.652a.5.5 0 0 1-.006-.916l12.728-5.657a.5.5 0 0 1 .556.103z"/></svg>
+                </button>
+                <button id="tool-draw-track" data-tool-mode="layout" title="Dibujar Pista (T): Dibuja pistas de cobre para conectar huellas.">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path d="M15.5 7.5a.5.5 0 0 0-.5-.5H8.5v-6.5a.5.5 0 0 0-1 0V7H.5a.5.5 0 0 0 0 1H7v6.5a.5.5 0 0 0 1 0V8h6.5a.5.5 0 0 0 .5-.5z"/></svg>
+                </button>
+                <!-- Common Tools -->
+                <span class="mx-1 text-slate-700 toolbar-separator">|</span>
+                <button id="zoom-in" title="Acercar (+)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path d="M8 0a1 1 0 0 1 1 1v6h6a1 1 0 1 1 0 2H9v6a1 1 0 1 1-2 0V9H1a1 1 0 0 1 0-2h6V1a1 1 0 0 1 1-1z"/></svg>
+                </button>
+                <button id="zoom-out" title="Alejar (-)">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path d="M0 8a1 1 0 0 1 1-1h14a1 1 0 1 1 0 2H1a1 1 0 0 1-1-1z"/></svg>
+                </button>
+                <button id="zoom-fit" title="Ajustar a Pantalla (F)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path d="M1.5 1a.5.5 0 0 0-.5.5v3a.5.5 0 0 1-1 0v-3A1.5 1.5 0 0 1 1.5 0h3a.5.5 0 0 1 0 1h-3zM10 .5a.5.5 0 0 1 .5-.5h3A1.5 1.5 0 0 1 15 1.5v3a.5.5 0 0 1-1 0v-3a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 1 0 1h-3A1.5 1.5 0 0 1 0 13.5v-3a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v3a1.5 1.5 0 0 1-1.5 1.5h-3a.5.5 0 0 1 0-1h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 1 .5-.5z"/></svg>
+                </button>
+                <span class="mx-1 text-slate-700 toolbar-separator" data-tool-mode="layout">|</span>
+                <button id="import-gerber" data-tool-mode="layout" title="Importar Gerber (G): Carga archivos Gerber/Drill para visualizarlos." class="toolbar-button" style="margin-left: auto;"> <!-- Pushed to right -->
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path fill-rule="evenodd" d="M2 3.5A1.5 1.5 0 013.5 2h6.879a1.5 1.5 0 011.06.44l4.122 4.12A1.5 1.5 0 0116 7.622V16.5a1.5 1.5 0 01-1.5 1.5h-11A1.5 1.5 0 012 16.5v-13zM3.5 3A.5.5 0 003 3.5v13a.5.5 0 00.5.5h11a.5.5 0 00.5-.5V7.622a.5.5 0 00-.146-.353l-4.122-4.12A.5.5 0 0010.379 3H3.5zm7.5 6.5a.5.5 0 00-1 0V11h-1.5a.5.5 0 000 1H10v1.5a.5.5 0 001 0V12h1.5a.5.5 0 000-1H11V9.5z" clip-rule="evenodd" /></svg>
+                    <span>Importar Gerber</span>
+                </button>
+                <button id="export-gerber" data-tool-mode="layout" title="Exportar Gerber (X): Genera archivos Gerber y de taladros." class="toolbar-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.955 3.129V2.75z" /><path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" /></svg>
+                    <span>Exportar Gerber</span>
+                </button>
+            </div>
+            
+            <!-- This div will act as the direct parent for all canvas views -->
+            <div id="canvas-views-container" style="flex-grow: 1; position: relative;">
+                <div id="schematic-canvas-view" class="canvas-area">
+                    <svg id="schematic-svg-canvas" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <pattern id="schematic-grid-pattern" width="20" height="20" patternUnits="userSpaceOnUse">
+                                <circle cx="0.5" cy="0.5" r="0.5" fill="#2c3e50"/>
+                            </pattern>
+                        </defs>
+                        <rect id="schematic-grid-rect" width="100%" height="100%" fill="url(#schematic-grid-pattern)" />
+                        <g id="schematic-elements-group">
+                            <!-- Schematic symbols and wires will be appended here -->
+                        </g>
+                        <line id="temp-wire-line" class="hidden" stroke="var(--calypso-accent)" stroke-width="1.5" stroke-dasharray="3,3"/>
+                    </svg>
+                </div>
+
+                <div id="layout-canvas-view" class="canvas-area">
+                    <svg id="layout-svg-canvas" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <pattern id="layout-grid-pattern" width="20" height="20" patternUnits="userSpaceOnUse">
+                                <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#2c3e50" stroke-width="0.5"/>
+                            </pattern>
+                            <pattern id="layout-fine-grid-pattern" width="4" height="4" patternUnits="userSpaceOnUse">
+                                <path d="M 4 0 L 0 0 0 4" fill="none" stroke="#1e293b" stroke-width="0.25"/>
+                            </pattern>
+                        </defs>
+                        <rect id="layout-grid-rect-fine" width="100%" height="100%" fill="url(#layout-fine-grid-pattern)" />
+                        <rect id="layout-grid-rect" width="100%" height="100%" fill="url(#layout-grid-pattern)" />
+                        <g id="ratsnest-group"> <!-- Ratsnest lines below elements -->
+                            <!-- Ratsnest lines will be appended here -->
+                        </g>
+                        <g id="layout-elements-group">
+                            <!-- PCB footprints and tracks will be appended here -->
+                        </g>
+                        <line id="temp-track-line" class="hidden" />
+                    </svg>
+                </div>
+
+                <div id="three-canvas-container" class="canvas-area">
+                    <!-- Three.js canvas will be appended here by script -->
+                </div>
+            </div> <!-- End of canvas-views-container -->
+            <div id="selection-rect"></div> <!-- Common for schematic and layout, positioned relative to main-content -->
+
+
+            <footer id="footer-status" title="Barra de Estado: Muestra información contextual.">
+                <span id="status-coords">X: 0, Y: 0</span>
+                <span id="status-zoom">Zoom: 100%</span>
+                <span id="status-selection">Selección: Ninguna</span>
+                <span id="status-tool">Herramienta: Seleccionar</span>
+            </footer>
+        </main>
+    </div>
+
+    <script type="module">
+        // --- Tailwind Config (for CDN) ---
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'calypso-dark-bg': 'var(--calypso-dark-bg)',
+                        'calypso-panel-bg': 'var(--calypso-panel-bg)',
+                        'calypso-border': 'var(--calypso-border)',
+                        'calypso-text-primary': 'var(--calypso-text-primary)',
+                        'calypso-text-secondary': 'var(--calypso-text-secondary)',
+                        'calypso-accent': 'var(--calypso-accent)',
+                        'calypso-accent-hover': 'var(--calypso-accent-hover)',
+                        'calypso-green': 'var(--calypso-green)',
+                        'calypso-red': 'var(--calypso-red)',
+                    },
+                    fontFamily: {
+                        orbitron: ['Orbitron', 'sans-serif'],
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            },
+            plugins: [
+                tailwind.plugin(function({ addBase, theme }) { // For form checkbox styling
+                    addBase({
+                        '.form-checkbox': {
+                            'appearance': 'none', 'padding': '0', 'print-color-adjust': 'exact', 'display': 'inline-block',
+                            'vertical-align': 'middle', 'background-origin': 'border-box', 'user-select': 'none',
+                            'flex-shrink': '0', 'height': '1rem', 'width': '1rem', 'color': theme('colors.sky.500'),
+                            'background-color': theme('colors.slate.800'), 'border-color': theme('colors.slate.600'),
+                            'border-width': '1px', 'border-radius': '0.25rem',
+                            '&:focus': { 'outline': '2px solid transparent', 'outline-offset': '2px', 'box-shadow': `0 0 0 2px ${theme('colors.slate.900')}, 0 0 0 4px ${theme('colors.sky.500')}`, },
+                            '&:checked': {
+                                'background-image': `url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e")`,
+                                'border-color': 'transparent', 'background-color': 'currentColor', 'background-size': '100% 100%',
+                                'background-position': 'center', 'background-repeat': 'no-repeat',
+                            },
+                        },
+                    });
+                }),
+            ]
+        };
+
+        // --- Three.js Imports ---
+        let THREE;
+        let OrbitControls;
+        let threeScene, threeCamera, threeRenderer, threeControls;
+        let threeElementsMap = new Map();
+        let pcbMesh;
+        let threeModulesLoaded = false;
+
+        // --- App Constants ---
+        const PCB_THICKNESS_3D = 1.6; // mm
+        const DEFAULT_COMPONENT_HEIGHT_3D = 1.5; // mm
+        const DEFAULT_PAD_THICKNESS_3D = 0.05;
+        const DEFAULT_TRACK_THICKNESS_3D = 0.035;
+        const SVG_NS = "http://www.w3.org/2000/svg";
+
+        // --- App State & Core Logic ---
+        const AppState = {
+            threeColors: {
+                    pcb: '#004d00',
+                    componentBody: '#2c3e50',
+                    smdPad: '#f0c040',
+                    track: '#b87333'
+                },
+            activeViewMode: 'schematic',
+            schematicElements: [], 
+            selectedSchematicElementIds: [],
+            schematicZoomLevel: 1,
+            schematicPan: { x: 0, y: 0 },
+            schematicGridSize: 20,
+            activeSchematicTool: 'select',
+            isDrawingWire: false,
+            currentWireStartPoint: null, 
+            nextSchematicElementId: 0,
+            schematicSymbolLibrary: {
+                    'RES': {
+                        name: 'Resistor', prefix: 'R', width: 40, height: 16,
+                        svg: `<rect x="5" y="5" width="30" height="6" stroke="currentColor" fill="none" stroke-width="1.5"/>
+                              <line x1="0" y1="8" x2="5" y2="8" stroke="currentColor" stroke-width="1"/>
+                              <line x1="35" y1="8" x2="40" y2="8" stroke="currentColor" stroke-width="1"/>`,
+                        pins: [ { id: '1', name: '1', x: 0, y: 8}, { id: '2', name: '2', x: 40, y: 8} ],
+                        properties: { value: '1kΩ' }, defaultFootprint: 'RESISTOR_SMT0805'
+                    },
+                    'CAP': {
+                        name: 'Capacitor', prefix: 'C', width: 20, height: 16,
+                        svg: `<line x1="0" y1="8" x2="8" y2="8" stroke="currentColor" stroke-width="1"/>
+                              <line x1="8" y1="0" x2="8" y2="16" stroke="currentColor" stroke-width="1.5"/>
+                              <line x1="12" y1="0" x2="12" y2="16" stroke="currentColor" stroke-width="1.5"/>
+                              <line x1="12" y1="8" x2="20" y2="8" stroke="currentColor" stroke-width="1"/>`,
+                        pins: [ { id: '1', name: '1', x: 0, y: 8}, { id: '2', name: '2', x: 20, y: 8} ],
+                        properties: { value: '100nF' }, defaultFootprint: 'CAPACITOR_SMT0805'
+                    },
+                    'VCC': {
+                        name: 'Power VCC/VDD', prefix: 'P', width: 20, height: 20,
+                        svg: `<circle cx="10" cy="10" r="8" stroke="currentColor" fill="none" stroke-width="1.5"/>
+                              <line x1="10" y1="0" x2="10" y2="6" stroke="currentColor" stroke-width="1.5"/>
+                              <text x="10" y="13" font-size="6" fill="currentColor" text-anchor="middle" dominant-baseline="middle">VCC</text>`,
+                        pins: [ { id: '1', name: 'VCC', x: 10, y: 0 } ],
+                        properties: { value: '+5V' }, defaultFootprint: null
+                    },
+                    'GND': {
+                        name: 'Ground', prefix: 'P', width: 20, height: 12,
+                        svg: `<line x1="10" y1="0" x2="10" y2="4" stroke="currentColor" stroke-width="1.5"/>
+                              <line x1="4" y1="4" x2="16" y2="4" stroke="currentColor" stroke-width="1.5"/>
+                              <line x1="6" y1="7" x2="14" y2="7" stroke="currentColor" stroke-width="1.5"/>
+                              <line x1="8" y1="10" x2="12" y2="10" stroke="currentColor" stroke-width="1.5"/>`,
+                        pins: [ { id: '1', name: 'GND', x: 10, y: 0 } ],
+                        properties: { value: 'GND' }, defaultFootprint: null
+                    },
+                    'TERMINAL': {
+                        name: 'Terminal/Conector Pin', prefix: 'J', width: 12, height: 12,
+                        svg: `<circle cx="6" cy="6" r="4" stroke="currentColor" fill="none" stroke-width="1.5"/>
+                              <line x1="10" y1="6" x2="12" y2="6" stroke="currentColor" stroke-width="1"/>`,
+                        pins: [ { id: '1', name: 'P', x: 12, y: 6 } ],
+                        properties: { value: 'TERM' }, defaultFootprint: 'CONN_HEADER_1X01_THT'
+                    },
+                    'DIODE': {
+                        name: 'Diode', prefix: 'D', width: 30, height: 16,
+                        svg: `<line x1="0" y1="8" x2="10" y2="8" stroke="currentColor" stroke-width="1"/>
+                              <polygon points="10,2 10,14 20,8" stroke="currentColor" fill="currentColor" stroke-width="1"/>
+                              <line x1="20" y1="2" x2="20" y2="14" stroke="currentColor" stroke-width="1.5"/>
+                              <line x1="20" y1="8" x2="30" y2="8" stroke="currentColor" stroke-width="1"/>`,
+                        pins: [ { id: 'A', name: 'A', x: 0, y: 8 }, { id: 'K', name: 'K', x: 30, y: 8 } ],
+                        properties: { value: '1N4001' }, defaultFootprint: 'DIODE_SMT_SOD123'
+                    },
+                    'LED': {
+                        name: 'LED', prefix: 'D', width: 30, height: 20,
+                        svg: `<line x1="0" y1="10" x2="10" y2="10" stroke="currentColor" stroke-width="1"/>
+                              <polygon points="10,4 10,16 20,10" stroke="currentColor" fill="currentColor" stroke-width="1"/>
+                              <line x1="20" y1="4" x2="20" y2="16" stroke="currentColor" stroke-width="1.5"/>
+                              <line x1="20" y1="10" x2="30" y2="10" stroke="currentColor" stroke-width="1"/>
+                              <line x1="15" y1="2" x2="18" y2="0" stroke="currentColor" stroke-width="1"/>
+                              <line x1="18" y1="2" x2="21" y2="0" stroke="currentColor" stroke-width="1"/>`,
+                        pins: [ { id: 'A', name: 'A', x: 0, y: 10 }, { id: 'K', name: 'K', x: 30, y: 10 } ],
+                        properties: { value: 'LED_Red', color: 'Red' }, defaultFootprint: 'LED_SMT0805'
+                    },
+                    'ZENER_DIODE': {
+                        name: 'Zener Diode', prefix: 'D', width: 30, height: 16,
+                        svg: `<line x1="0" y1="8" x2="10" y2="8" stroke="currentColor" stroke-width="1"/>
+                              <polygon points="10,2 10,14 20,8" stroke="currentColor" fill="currentColor" stroke-width="1"/>
+                              <line x1="20" y1="2" x2="20" y2="14" stroke="currentColor" stroke-width="1.5"/>
+                              <line x1="18" y1="2" x2="20" y2="4" stroke="currentColor" stroke-width="1.5"/>
+                              <line x1="20" y1="12" x2="22" y2="14" stroke="currentColor" stroke-width="1.5"/>
+                              <line x1="20" y1="8" x2="30" y2="8" stroke="currentColor" stroke-width="1"/>`,
+                        pins: [ { id: 'A', name: 'A', x: 0, y: 8 }, { id: 'K', name: 'K', x: 30, y: 8 } ],
+                        properties: { value: 'BZT52C5V1' }, defaultFootprint: 'DIODE_SMT_SOD123'
+                    },
+                    'NPN_BJT': {
+                        name: 'NPN BJT', prefix: 'Q', width: 30, height: 30,
+                        svg: `<circle cx="15" cy="15" r="10" stroke="currentColor" fill="none" stroke-width="1.5"/>
+                              <line x1="15" y1="25" x2="15" y2="18" stroke="currentColor" stroke-width="1.5"/>
+                              <line x1="5" y1="15" x2="12" y2="15" stroke="currentColor" stroke-width="1.5"/>
+                              <line x1="12" y1="11" x2="12" y2="19" stroke="currentColor" stroke-width="1.5"/>
+                              <line x1="12" y1="11" x2="15" y2="7" stroke="currentColor" stroke-width="1.5"/>
+                              <polygon points="15,25 12,20 18,20" fill="currentColor"/>`,
+                        pins: [ { id: 'C', name: 'C', x: 15, y: 0 }, { id: 'B', name: 'B', x: 0, y: 15 }, { id: 'E', name: 'E', x: 15, y: 30 } ],
+                        properties: { value: 'BC547' }, defaultFootprint: 'TRANSISTOR_SOT23'
+                    },
+                    'PNP_BJT': {
+                        name: 'PNP BJT', prefix: 'Q', width: 30, height: 30,
+                        svg: `<circle cx="15" cy="15" r="10" stroke="currentColor" fill="none" stroke-width="1.5"/>
+                              <line x1="15" y1="5" x2="15" y2="12" stroke="currentColor" stroke-width="1.5"/>
+                              <line x1="5" y1="15" x2="12" y2="15" stroke="currentColor" stroke-width="1.5"/>
+                              <line x1="12" y1="11" x2="12" y2="19" stroke="currentColor" stroke-width="1.5"/>
+                              <line x1="12" y1="19" x2="15" y2="23" stroke="currentColor" stroke-width="1.5"/>
+                              <polygon points="15,5 12,10 18,10" fill="currentColor"/>`,
+                        pins: [ { id: 'C', name: 'C', x: 15, y: 30 }, { id: 'B', name: 'B', x: 0, y: 15 }, { id: 'E', name: 'E', x: 15, y: 0 } ],
+                        properties: { value: 'BC557' }, defaultFootprint: 'TRANSISTOR_SOT23'
+                    },
+                    'N_MOSFET': {
+                        name: 'N-Channel MOSFET', prefix: 'Q', width: 30, height: 30,
+                        svg: `<line x1="0" y1="15" x2="8" y2="15" stroke="currentColor" stroke-width="1.5"/>
+                              <line x1="8" y1="5" x2="8" y2="25" stroke="currentColor" stroke-width="1.5"/>
+                              <line x1="8" y1="10" x2="15" y2="10" stroke="currentColor" stroke-width="1"/>
+                              <line x1="8" y1="20" x2="15" y2="20" stroke="currentColor" stroke-width="1"/>
+                              <line x1="15" y1="10" x2="15" y2="7" stroke="currentColor" stroke-width="1.5"/>
+                              <line x1="15" y1="20" x2="15" y2="23" stroke="currentColor" stroke-width="1.5"/>
+                              <line x1="15" y1="7" x2="20" y2="7" stroke="currentColor" stroke-width="1.5"/>
+                              <line x1="15" y1="23" x2="20" y2="23" stroke="currentColor" stroke-width="1.5"/>
+                              <line x1="20" y1="7" x2="20" y2="23" stroke="currentColor" stroke-width="1.5"/>
+                              <polygon points="17,15 20,12 20,18" fill="currentColor"/>
+                              <line x1="20" y1="0" x2="20" y2="7" stroke="currentColor" stroke-width="1.5"/>
+                              <line x1="20" y1="30" x2="20" y2="23" stroke="currentColor" stroke-width="1.5"/>`,
+                        pins: [ { id: 'D', name: 'D', x: 20, y: 0 }, { id: 'G', name: 'G', x: 0, y: 15 }, { id: 'S', name: 'S', x: 20, y: 30 } ],
+                        properties: { value: 'BS170' }, defaultFootprint: 'TRANSISTOR_TO92'
+                    },
+                    'CAP_ELECT': {
+                        name: 'Capacitor Electrolítico', prefix: 'C', width: 24, height: 20,
+                        svg: `<line x1="0" y1="10" x2="8" y2="10" stroke="currentColor" stroke-width="1"/>
+                              <line x1="8" y1="2" x2="8" y2="18" stroke="currentColor" stroke-width="1.5"/>
+                              <path d="M 12 2 C 10 6, 10 14, 12 18" stroke="currentColor" fill="none" stroke-width="1.5"/>
+                              <line x1="12" y1="10" x2="20" y2="10" stroke="currentColor" stroke-width="1"/>
+                              <text x="6" y="5" font-size="6" fill="currentColor">+</text>`,
+                        pins: [ { id: '1', name: '+', x: 0, y: 10}, { id: '2', name: '-', x: 20, y: 10} ],
+                        properties: { value: '10uF' }, defaultFootprint: 'CAPACITOR_THT_RADIAL_D5P2.5'
+                    },
+                    'CAP_POL': {
+                        name: 'Capacitor Polarizado', prefix: 'C', width: 24, height: 16,
+                        svg: `<line x1="0" y1="8" x2="8" y2="8" stroke="currentColor" stroke-width="1"/>
+                              <rect x="8" y="2" width="4" height="12" stroke="currentColor" fill="currentColor" stroke-width="1"/>
+                              <line x1="16" y1="2" x2="16" y2="14" stroke="currentColor" stroke-width="1.5"/>
+                              <line x1="16" y1="8" x2="24" y2="8" stroke="currentColor" stroke-width="1"/>
+                              <text x="6" y="5" font-size="6" fill="currentColor">+</text>`,
+                        pins: [ { id: '1', name: '+', x: 0, y: 8}, { id: '2', name: '-', x: 24, y: 8} ],
+                        properties: { value: '1uF' }, defaultFootprint: 'CAP_TANTALUM_SMD_A'
+                    },
+                    'INDUCTOR': {
+                        name: 'Inductor', prefix: 'L', width: 40, height: 16,
+                        svg: `<line x1="0" y1="8" x2="5" y2="8" stroke="currentColor" stroke-width="1"/>
+                              <path d="M 5 8 C 5 2, 10 2, 10 8 S 15 14, 20 8 S 25 2, 30 8 S 35 14, 35 8" stroke="currentColor" fill="none" stroke-width="1.5"/>
+                              <line x1="35" y1="8" x2="40" y2="8" stroke="currentColor" stroke-width="1"/>`,
+                        pins: [ { id: '1', name: '1', x: 0, y: 8 }, { id: '2', name: '2', x: 40, y: 8 } ],
+                        properties: { value: '10uH' }, defaultFootprint: 'INDUCTOR_SMD'
+                    },
+                    'IC_GENERIC_RECT': {
+                        name: 'IC Genérico Rectangular', prefix: 'U', width: 30, height: 50,
+                        svg: `<rect x="2" y="2" width="26" height="46" stroke="currentColor" fill="rgba(30,41,59,0.5)" stroke-width="1.5" rx="1"/>
+                              <circle cx="6" cy="6" r="1.5" fill="currentColor"/>`,
+                        pins: [ 
+                            { id: '1', name: 'P1', x: 0, y: 8 }, { id: '2', name: 'P2', x: 0, y: 16 }, { id: '3', name: 'P3', x: 0, y: 24 }, { id: '4', name: 'P4', x: 0, y: 32 }, { id: '5', name: 'P5', x: 0, y: 40 },
+                            { id: '6', name: 'P6', x: 30, y: 40 }, { id: '7', name: 'P7', x: 30, y: 32 }, { id: '8', name: 'P8', x: 30, y: 24 }, { id: '9', name: 'P9', x: 30, y: 16 }, { id: '10', name: 'P10', x: 30, y: 8 }
+                        ],
+                        properties: { value: 'GEN_IC_10P' }, defaultFootprint: 'SOIC10_EXAMPLE'
+                    },
+                    'VOLTAGE_REG': {
+                        name: 'Regulador de Voltaje', prefix: 'U', width: 30, height: 30,
+                        svg: `<rect x="5" y="5" width="20" height="20" stroke="currentColor" fill="rgba(30,41,59,0.5)" stroke-width="1.5" rx="1"/>
+                              <text x="15" y="15" font-size="6" fill="currentColor" text-anchor="middle" dominant-baseline="middle">REG</text>`,
+                        pins: [ { id: 'IN', name: 'IN', x: 0, y: 10 }, { id: 'GND', name: 'GND', x: 15, y: 30 }, { id: 'OUT', name: 'OUT', x: 30, y: 10 } ],
+                        properties: { value: 'LM7805' }, defaultFootprint: 'TO220_EXAMPLE'
+                    },
+                    'CRYSTAL': {
+                        name: 'Crystal Oscillator', prefix: 'Y', width: 30, height: 20,
+                        svg: `<line x1="0" y1="10" x2="5" y2="10" stroke="currentColor" stroke-width="1"/>
+                              <rect x="5" y="5" width="20" height="10" stroke="currentColor" fill="none" stroke-width="1.5"/>
+                              <line x1="10" y1="5" x2="10" y2="15" stroke="currentColor" stroke-width="1"/>
+                              <line x1="20" y1="5" x2="20" y2="15" stroke="currentColor" stroke-width="1"/>
+                              <line x1="25" y1="10" x2="30" y2="10" stroke="currentColor" stroke-width="1"/>`,
+                        pins: [ { id: '1', name: '1', x: 0, y: 10 }, { id: '2', name: '2', x: 30, y: 10 } ],
+                        properties: { value: '16MHz' }, defaultFootprint: 'CRYSTAL_HC49S'
+                    },
+                    'SWITCH_SPST': {
+                        name: 'Switch SPST', prefix: 'SW', width: 30, height: 20,
+                        svg: `<circle cx="5" cy="10" r="1.5" fill="currentColor"/>
+                              <line x1="0" y1="10" x2="5" y2="10" stroke="currentColor" stroke-width="1"/>
+                              <circle cx="25" cy="10" r="1.5" fill="currentColor"/>
+                              <line x1="25" y1="10" x2="30" y2="10" stroke="currentColor" stroke-width="1"/>
+                              <line x1="5" y1="10" x2="20" y2="5" stroke="currentColor" stroke-width="1.5"/>`,
+                        pins: [ { id: '1', name: '1', x: 0, y: 10 }, { id: '2', name: '2', x: 30, y: 10 } ],
+                        properties: { value: 'SW_SPST' }, defaultFootprint: 'SWITCH_THT_EXAMPLE'
+                    },
+                    'POT': { 
+                        name: 'Potenciómetro (Variable Resistor)', prefix: 'RV', width: 40, height: 26,
+                        svg: `<rect x="5" y="5" width="30" height="6" stroke="currentColor" fill="none" stroke-width="1.5"/>
+                              <line x1="0" y1="8" x2="5" y2="8" stroke="currentColor" stroke-width="1"/>
+                              <line x1="35" y1="8" x2="40" y2="8" stroke="currentColor" stroke-width="1"/>
+                              <line x1="20" y1="11" x2="20" y2="20" stroke="currentColor" stroke-width="1.5"/>
+                              <polygon points="18,20 22,20 20,24" fill="currentColor"/>`,
+                        pins: [ { id: '1', name: '1', x: 0, y: 8}, { id: '2', name: 'W', x: 20, y: 26}, { id: '3', name: '3', x: 40, y: 8} ],
+                        properties: { value: '10k' }, defaultFootprint: 'POT_TRIMMER_THT'
+                    },
+                    'FUSE': {
+                        name: 'Fuse', prefix: 'F', width: 40, height: 16,
+                        svg: `<line x1="0" y1="8" x2="5" y2="8" stroke="currentColor" stroke-width="1"/>
+                              <rect x="5" y="5" width="30" height="6" stroke="currentColor" fill="none" stroke-width="1.5"/>
+                              <line x1="5" y1="8" x2="35" y2="8" stroke="currentColor" stroke-width="1" stroke-dasharray="2,1"/>
+                              <line x1="35" y1="8" x2="40" y2="8" stroke="currentColor" stroke-width="1"/>`,
+                        pins: [ { id: '1', name: '1', x: 0, y: 8}, { id: '2', name: '2', x: 40, y: 8} ],
+                        properties: { value: '1A' }, defaultFootprint: 'FUSE_HOLDER_5X20MM'
+                    },
+                    'IC_DIP8': { 
+                        name: 'IC Generic (DIP8)', prefix: 'U', width: 40, height: 80,
+                        svg: `<rect x="0" y="0" width="40" height="80" stroke="currentColor" fill="rgba(30,41,59,0.5)" stroke-width="1.5" rx="2"/>
+                              <circle cx="5" cy="5" r="2" fill="currentColor"/>
+                              <text x="20" y="15" font-size="8" fill="currentColor" text-anchor="middle">IC</text>`,
+                        pins: [
+                            { id: '1', name: '1', x: 0, y: 10 }, { id: '2', name: '2', x: 0, y: 30 },
+                            { id: '3', name: '3', x: 0, y: 50 }, { id: '4', name: '4', x: 0, y: 70 },
+                            { id: '5', name: '5', x: 40, y: 70 }, { id: '6', name: '6', x: 40, y: 50 },
+                            { id: '7', name: '7', x: 40, y: 30 }, { id: '8', name: '8', x: 40, y: 10 },
+                        ],
+                        properties: { value: 'GenIC' }, defaultFootprint: 'DIP8_EXAMPLE' 
+                    },
+                    'CONN_HEADER_2X03_THT': {
+                        name: 'Conector Header 2x03 (ISP)', prefix: 'J', width: 20, height: 30,
+                        svg: `<rect x="0" y="0" width="20" height="30" stroke="currentColor" fill="rgba(30,41,59,0.5)" stroke-width="1.5" rx="1"/>
+                                <circle cx="4" cy="4" r="1" fill="currentColor"/>
+                                <text x="10" y="15" font-size="6" fill="currentColor" text-anchor="middle" dominant-baseline="middle">ISP</text>`,
+                        pins: [ 
+                            { id: '1', name: 'MISO', x: 0, y: 5 }, { id: '2', name: 'VCC', x: 20, y: 5 },
+                            { id: '3', name: 'SCK', x: 0, y: 15 },  { id: '4', name: 'MOSI', x: 20, y: 15 },
+                            { id: '5', name: 'RESET', x: 0, y: 25 }, { id: '6', name: 'GND', x: 20, y: 25 }
+                        ],
+                        properties: { value: 'ISP_2x3' }, defaultFootprint: 'CONN_HEADER_2X03_THT_FOOTPRINT'
+                    },
+                    'MCU_TQFP32': {
+                        name: 'Microcontrolador (TQFP32)', prefix: 'U', width: 60, height: 60,
+                        svg: `<rect x="5" y="5" width="50" height="50" stroke="currentColor" fill="rgba(30,41,59,0.7)" stroke-width="1.5" rx="2"/>
+                              <circle cx="10" cy="10" r="2" fill="currentColor"/>
+                              <text x="30" y="30" font-size="10" fill="currentColor" text-anchor="middle" dominant-baseline="middle">MCU</text>`,
+                        pins: [ 
+                            { id: '1', name: 'P1', x: 0, y: 10 }, { id: '2', name: 'P2', x: 0, y: 15 }, { id: '3', name: 'P3', x: 0, y: 20 }, { id: '4', name: 'P4', x: 0, y: 25 },
+                            { id: '5', name: 'P5', x: 0, y: 35 }, { id: '6', name: 'P6', x: 0, y: 40 }, { id: '7', name: 'P7', x: 0, y: 45 }, { id: '8', name: 'P8', x: 0, y: 50 },
+                            { id: '9', name: 'P9', x: 10, y: 60 }, { id: '10', name: 'P10', x: 15, y: 60 }, { id: '11', name: 'P11', x: 20, y: 60 }, { id: '12', name: 'P12', x: 25, y: 60 },
+                            { id: '13', name: 'P13', x: 35, y: 60 }, { id: '14', name: 'P14', x: 40, y: 60 }, { id: '15', name: 'P15', x: 45, y: 60 }, { id: '16', name: 'P16', x: 50, y: 60 },
+                            { id: '17', name: 'P17', x: 60, y: 50 }, { id: '18', name: 'P18', x: 60, y: 45 }, { id: '19', name: 'P19', x: 60, y: 40 }, { id: '20', name: 'P20', x: 60, y: 35 },
+                            { id: '21', name: 'P21', x: 60, y: 25 }, { id: '22', name: 'P22', x: 60, y: 20 }, { id: '23', name: 'P23', x: 60, y: 15 }, { id: '24', name: 'P24', x: 60, y: 10 },
+                            { id: '25', name: 'P25', x: 50, y: 0 }, { id: '26', name: 'P26', x: 45, y: 0 }, { id: '27', name: 'P27', x: 40, y: 0 }, { id: '28', name: 'P28', x: 35, y: 0 },
+                            { id: '29', name: 'P29', x: 25, y: 0 }, { id: '30', name: 'P30', x: 20, y: 0 }, { id: '31', name: 'P31', x: 15, y: 0 }, { id: '32', name: 'P32', x: 10, y: 0 }
+                        ],
+                        properties: { value: 'ATMEGA328P-AU' },
+                        defaultFootprint: 'MCU_ATMEGA328_SMT'
+                    },
+                },
+            nets: {}, 
+            nextNetId: 0,
+            layoutElements: [], 
+            selectedLayoutElementIds: [],
+            layoutZoomLevel: 1,
+            layoutPan: { x: 0, y: 0 },
+            layoutGridSize: 20,
+            activeLayoutTool: 'select', 
+            isDrawingTrack: false,
+            currentTrackPoints: [],
+            nextLayoutElementId: 0,
+            footprintLibrary: {
+                    'MCU_ATMEGA328_SMT': { 
+                        name: 'MCU ATmega328 (TQFP-32)', width: 9, height: 9,
+                        svg: `
+                            <rect x="0" y="0" width="9" height="9" fill="none" stroke="white" stroke-width="0.1" />
+                            <rect x="1" y="1" width="7" height="7" fill="#555" stroke="none" />
+                            <circle cx="1.5" cy="1.5" r="0.3" fill="white"/>
+                            ${Array.from({length: 8}).map((_, i) => `<rect x="${1.5 + i*0.8}" y="0.2" width="0.4" height="0.8" fill="#b87333"/>`).join('')}
+                            ${Array.from({length: 8}).map((_, i) => `<rect x="${1.5 + i*0.8}" y="8" width="0.4" height="0.8" fill="#b87333"/>`).join('')}
+                            ${Array.from({length: 8}).map((_, i) => `<rect x="0.2" y="${1.5 + i*0.8}" width="0.8" height="0.4" fill="#b87333"/>`).join('')}
+                            ${Array.from({length: 8}).map((_, i) => `<rect x="8" y="${1.5 + i*0.8}" width="0.8" height="0.4" fill="#b87333"/>`).join('')}
+                        `,
+                        properties: { ref: 'U?', value: 'ATmega328P-AU', package: 'TQFP-32', footprint_name: 'TQFP32_7x7mm_P0.8mm', '3d_height': 1.2 }
+                    },
+                    'MCU_ESP32_WROOM_SMT': {
+                        name: 'MCU ESP32-WROOM', width: 18, height: 25.5,
+                        svg: `
+                            <rect x="0" y="0" width="18" height="25.5" fill="none" stroke="white" stroke-width="0.1"/>
+                            <rect x="1" y="1" width="16" height="23.5" fill="#444" stroke="none"/>
+                            ${Array.from({length: 19}).map((_,i)=> `<rect x="0.5" y="${1.5 + i*1.27}" width="1.5" height="0.8" fill="#b87333"/>` ).join('')}
+                            ${Array.from({length: 19}).map((_,i)=> `<rect x="${18-2}" y="${1.5 + i*1.27}" width="1.5" height="0.8" fill="#b87333"/>` ).join('')}
+                        `,
+                        properties: { ref: 'U?', value: 'ESP32-WROOM-32', package: 'ESP32-WROOM-32', footprint_name: 'ESP32-WROOM-32', '3d_height': 3.5 }
+                    },
+                    'RESISTOR_THT_AXIAL': { 
+                        name: 'Resistencia Axial (THT)', width: 10.16, height: 6.3,
+                        svg: `
+                            <circle cx="0" cy="3.15" r="1.25" fill="#b87333" stroke="#774f28" stroke-width="0.1"/>
+                            <circle cx="10.16" cy="3.15" r="1.25" fill="#b87333" stroke="#774f28" stroke-width="0.1"/>
+                            <rect x="${(10.16-6.3)/2}" y="0" width="6.3" height="6.3" fill="#a1a1aa" stroke="white" stroke-width="0.1" rx="1"/>
+                        `,
+                        properties: { ref: 'R?', value: '1kΩ', footprint_name: 'R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal', '3d_height': 3, '3d_diameter': 2.5, drill: 0.8 }
+                    },
+                    'CONN_HEADER_2X03_THT_FOOTPRINT': {
+                        name: 'Header 2x03 Pines THT (ISP)', width: 2.54 * 2, height: 2.54 * 3,
+                        svg: `
+                            <rect x="0" y="0" width="${2.54 * 2}" height="${2.54 * 3}" fill="none" stroke="white" stroke-width="0.1" rx="0.2"/>
+                            <rect x="${(2.54-0.8)/2}" y="${(2.54-0.8)/2}" width="0.8" height="0.8" fill="#b87333"/>
+                            <rect x="${(2.54-0.8)/2}" y="${2.54 + (2.54-0.8)/2}" width="0.8" height="0.8" fill="#b87333"/>
+                            <rect x="${(2.54-0.8)/2}" y="${2*2.54 + (2.54-0.8)/2}" width="0.8" height="0.8" fill="#b87333"/>
+                            <rect x="${2.54 + (2.54-0.8)/2}" y="${(2.54-0.8)/2}" width="0.8" height="0.8" fill="#b87333"/>
+                            <rect x="${2.54 + (2.54-0.8)/2}" y="${2.54 + (2.54-0.8)/2}" width="0.8" height="0.8" fill="#b87333"/>
+                            <rect x="${2.54 + (2.54-0.8)/2}" y="${2*2.54 + (2.54-0.8)/2}" width="0.8" height="0.8" fill="#b87333"/>
+                            <rect x="${((2.54-1.2)/2) - 0.1}" y="${((2.54-1.2)/2) - 0.1}" width="1.2" height="1.2" fill="none" stroke="white" stroke-width="0.1"/>
+                        `,
+                        properties: { ref: 'J?', value: 'ISP_CONN', pins: 6, pitch: 2.54, '3d_height': 8.5, drill: 1.0 }
+                    },
+                    'RESISTOR_SMT0805': {
+                        name: 'Resistencia (SMT 0805)', width: 2.0, height: 1.25,
+                        svg: `
+                            <rect x="0" y="0" width="2.0" height="1.25" fill="#4a5568" stroke="white" stroke-width="0.05" rx="0.1"/>
+                            <rect x="0.15" y="0.1" width="0.5" height="1.05" fill="#b87333"/>
+                            <rect x="${2.0-0.15-0.5}" y="0.1" width="0.5" height="1.05" fill="#b87333"/>
+                        `,
+                        properties: { ref: 'R?', value: '10kΩ', package: '0805', footprint_name: 'R_0805_2012Metric_Pad1.15x1.40mm_HandSolder', '3d_height': 0.5 }
+                    },
+                    'RESISTOR_SMT0603': { 
+                        name: 'Resistencia (SMT 0603)', width: 1.6, height: 0.8,
+                        svg: `
+                            <rect x="0" y="0" width="1.6" height="0.8" fill="#4a5568" stroke="white" stroke-width="0.05" rx="0.1"/>
+                            <rect x="0.1" y="0.05" width="0.4" height="0.7" fill="#b87333"/>
+                            <rect x="${1.6-0.1-0.4}" y="0.05" width="0.4" height="0.7" fill="#b87333"/>
+                        `,
+                        properties: { ref: 'R?', value: '1kΩ', package: '0603', footprint_name: 'R_0603_1608Metric', '3d_height': 0.45 }
+                    },
+                    'CAPACITOR_SMT0805': {
+                        name: 'Capacitor (SMT 0805)', width: 2.0, height: 1.25,
+                        svg: `
+                            <rect x="0" y="0" width="2.0" height="1.25" fill="#d97706" stroke="white" stroke-width="0.05" rx="0.1"/>
+                            <rect x="0.15" y="0.1" width="0.5" height="1.05" fill="#b87333"/>
+                            <rect x="${2.0-0.15-0.5}" y="0.1" width="0.5" height="1.05" fill="#b87333"/>
+                        `,
+                        properties: { ref: 'C?', value: '100nF', package: '0805', footprint_name: 'C_0805_2012Metric_Pad1.15x1.40mm_HandSolder', '3d_height': 0.85 }
+                    },
+                    'CAPACITOR_THT_RADIAL_D5P2.5': { 
+                        name: 'Capacitor Radial D5 P2.5 (THT)', width: 5, height: 5,
+                        svg: `
+                            <circle cx="1.25" cy="2.5" r="0.75" fill="#b87333" stroke="#774f28" stroke-width="0.1"/>
+                            <circle cx="3.75" cy="2.5" r="0.75" fill="#b87333" stroke="#774f28" stroke-width="0.1"/>
+                            <circle cx="2.5" cy="2.5" r="2.5" fill="none" stroke="white" stroke-width="0.2"/>
+                            <line x1="2.5" y1="0.5" x2="2.5" y2="1.5" stroke="white" stroke-width="0.2"/>
+                            <text x="1" y="1.5" font-size="1.5px" fill="white">+</text>
+                        `,
+                        properties: { ref: 'C?', value: '10µF', footprint_name: 'CP_Radial_D5.0mm_P2.50mm', '3d_height': 11, '3d_diameter': 5, drill: 0.8 }
+                    },
+                    'CAP_TANTALUM_SMD_A': { 
+                        name: 'Cap. Tantalio SMD (A)', width: 3.2, height: 1.6,
+                        svg: `
+                            <rect x="0" y="0" width="3.2" height="1.6" fill="#f59e0b" stroke="white" stroke-width="0.05" rx="0.1"/>
+                            <rect x="0.2" y="0.1" width="0.8" height="1.4" fill="#b87333"/>
+                            <rect x="${3.2-0.2-0.8}" y="0.1" width="0.8" height="1.4" fill="#b87333"/>
+                            <line x1="0.6" y1="0.2" x2="0.6" y2="0.5" stroke="white" stroke-width="0.1"/>
+                        `,
+                        properties: { ref: 'C?', value: '10uF/16V', package: 'Case A (EIA3216)', '3d_height': 1.6 },
+                    },
+                    'DIODE_SMT_SOD123': {
+                        name: 'Diodo (SMT SOD-123)', width: 3.7, height: 1.6,
+                        svg: `
+                            <rect x="0" y="0" width="3.7" height="1.6" fill="#1f2937" stroke="white" stroke-width="0.05" rx="0.1"/>
+                            <rect x="0.3" y="0.2" width="1.0" height="1.2" fill="#b87333"/>
+                            <rect x="${3.7-0.3-1.0}" y="0.2" width="1.0" height="1.2" fill="#b87333"/>
+                            <line x1="${3.7-0.3-1.0 - 0.2}" y1="0.2" x2="${3.7-0.3-1.0 - 0.2}" y2="1.4" stroke="white" stroke-width="0.15"/>
+                        `,
+                        properties: { ref: 'D?', value: '1N4148W', package: 'SOD-123', footprint_name: 'D_SOD-123_HandSoldering', '3d_height': 1.1 }
+                    },
+                    'LED_THT_5MM': {
+                        name: 'LED 5mm (THT)', width: 5.08, height: 2.54,
+                        svg: `
+                            <circle cx="1.27" cy="1.27" r="0.75" fill="#b87333" stroke="#774f28" stroke-width="0.1"/>
+                            <rect x="${5.08-1.27-0.75}" y="${1.27-0.75}" width="1.5" height="1.5" fill="#b87333" stroke="#774f28" stroke-width="0.1"/>
+                            <circle cx="2.54" cy="1.27" r="2.5" fill="none" stroke="white" stroke-width="0.2"/>
+                            <line x1="0" y1="1.27" x2="0.8" y2="1.27" stroke="white" stroke-width="0.2"/>
+                        `,
+                        properties: { ref: 'D?', value: 'LED_Red_5mm', footprint_name: 'LED_D5.0mm_P2.54mm_Horizontal', '3d_height': 8.6, '3d_diameter': 5, drill: 0.8 }
+                    },
+                    'LED_SMT0805': {
+                        name: 'LED (SMT 0805)', width: 2.0, height: 1.25,
+                        svg: `
+                            <rect x="0" y="0" width="2.0" height="1.25" fill="#333" stroke="white" stroke-width="0.05" rx="0.1"/>
+                            <rect x="0.15" y="0.1" width="0.5" height="1.05" fill="#b87333"/>
+                            <rect x="${2.0-0.15-0.5}" y="0.1" width="0.5" height="1.05" fill="#b87333"/>
+                            <polygon points="0.2,0.2 0.4,0.2 0.3,0.4" fill="white"/>
+                        `,
+                        properties: { ref: 'D?', value: 'LED_Green', package: '0805', '3d_height': 0.8, color: 'Green' }
+                    },
+                    'TRANSISTOR_SOT23': {
+                        name: 'Transistor (SMT SOT-23)', width: 2.9, height: 2.4,
+                        svg: `
+                            <rect x="0" y="0" width="2.9" height="1.3" fill="none" stroke="white" stroke-width="0.05"/>
+                            <rect x="0.3" y="1.8" width="0.8" height="0.6" fill="#b87333"/>
+                            <rect x="${2.9-0.3-0.8}" y="1.8" width="0.8" height="0.6" fill="#b87333"/>
+                            <rect x="${(2.9-0.8)/2}" y="0" width="0.8" height="0.6" fill="#b87333"/>
+                            <circle cx="0.5" cy="0.5" r="0.15" fill="white"/>
+                        `,
+                        properties: { ref: 'Q?', value: 'BC847', package: 'SOT-23', footprint_name: 'SOT-23_HandSoldering', '3d_height': 1.0 }
+                    },
+                    'TRANSISTOR_TO92': {
+                        name: 'Transistor (THT TO-92)', width: 5.08, height: 5.08,
+                        svg: `
+                            <path d="M0 ${5.08/2} A ${2.54} ${2.54} 0 0 1 ${5.08} ${5.08/2}" fill="none" stroke="white" stroke-width="0.2"/>
+                            <line x1="0" y1="${5.08/2}" x2="${5.08}" y2="${5.08/2}" stroke="white" stroke-width="0.2"/>
+                            <circle cx="${2.54-1.27}" cy="${2.54+1}" r="0.5" fill="#b87333"/>
+                            <circle cx="2.54" cy="${2.54+1}" r="0.5" fill="#b87333"/>
+                            <circle cx="${2.54+1.27}" cy="${2.54+1}" r="0.5" fill="#b87333"/>
+                        `,
+                        properties: { ref: 'Q?', value: '2N3904', package: 'TO-92', '3d_height': 15, drill: 0.7 }
+                    },
+                    'CONN_HEADER_1X01_THT': { 
+                        name: 'Pin Header 1x01 (THT)', width: 2.54, height: 2.54,
+                        svg: `<rect x="0" y="0" width="2.54" height="2.54" fill="none" stroke="white" stroke-width="0.1"/>
+                              <rect x="${(2.54-1)/2}" y="${(2.54-1)/2}" width="1" height="1" fill="#b87333"/>`,
+                        properties: { ref: 'J?', value: 'HDR_1x1', pins: 1, pitch: 2.54, '3d_height': 8.5, drill: 1.0 }
+                    },
+                    'CONN_HEADER_1X03_THT': {
+                        name: 'Pin Header 1x03 (THT)', width: 2.54 * 3, height: 2.54,
+                        svg: `
+                            <rect x="0" y="0" width="${2.54*3}" height="2.54" fill="none" stroke="white" stroke-width="0.1"/>
+                            <rect x="${2.54*0 + (2.54-1)/2}" y="${(2.54-1)/2}" width="1" height="1" fill="#b87333"/>
+                            <rect x="${2.54*1 + (2.54-1)/2}" y="${(2.54-1)/2}" width="1" height="1" fill="#b87333"/>
+                            <rect x="${2.54*2 + (2.54-1)/2}" y="${(2.54-1)/2}" width="1" height="1" fill="#b87333"/>
+                            <rect x="${2.54*0 + (2.54-1.2)/2}" y="${(2.54-1.2)/2 - 0.2}" width="1.2" height="0.4" fill="white"/>
+                        `,
+                        properties: { ref: 'J?', value: 'HDR_1x3', pins: 3, pitch: 2.54, footprint_name: 'Connector_PinHeader_2.54mm_1x03_P2.54mm_Vertical', '3d_height': 8.5, drill: 1.0 }
+                    },
+                    'CONN_IDC_2X05_THT': { 
+                        name: 'IDC Connector 2x05 (THT)', width: 2.54 * 5, height: 2.54 * 2,
+                        svg: `
+                            <rect x="0" y="0" width="${2.54*5}" height="${2.54*2}" fill="none" stroke="white" stroke-width="0.15" rx="0.5"/>
+                            ${Array.from({length: 5}).map((_,col) => `
+                                <rect x="${2.54*col + (2.54-0.8)/2}" y="${(2.54-0.8)/2}" width="0.8" height="0.8" fill="#b87333"/>
+                                <rect x="${2.54*col + (2.54-0.8)/2}" y="${2.54 + (2.54-0.8)/2}" width="0.8" height="0.8" fill="#b87333"/>
+                            `).join('')}
+                            <rect x="${(2.54-1)/2 - 0.2}" y="${(2.54-1)/2 - 0.2}" width="1.4" height="1.4" fill="none" stroke="white" stroke-width="0.1"/>
+                        `,
+                        properties: { ref: 'J?', value: 'IDC_2x5', pins: 10, '3d_height': 8, drill: 1.0}
+                    },
+                    'CRYSTAL_HC49S': {
+                        name: 'Crystal HC49/S (THT)', width: 11.05, height: 4.65,
+                        svg: `
+                            <rect x="0" y="0" width="11.05" height="4.65" fill="#ccc" stroke="white" stroke-width="0.1" rx="1"/>
+                            <circle cx="${11.05/2 - 4.83/2}" cy="${4.65/2}" r="0.6" fill="#b87333"/>
+                            <circle cx="${11.05/2 + 4.83/2}" cy="${4.65/2}" r="0.6" fill="#b87333"/>
+                        `,
+                        properties: { ref: 'Y?', value: '16MHz', '3d_height': 3.5, drill: 0.7 }
+                    },
+                    'SWITCH_THT_EXAMPLE': { name: 'Switch THT Example', width: 6, height: 6, svg: '<rect x="0" y="0" width="6" height="6" fill="#555" stroke="white" stroke-width="0.2"/><circle cx="1.5" cy="1.5" r="0.8" fill="#b87333"/><circle cx="4.5" cy="4.5" r="0.8" fill="#b87333"/>', properties: { ref:'SW?', '3d_height': 5, drill: 0.9}},
+                    'POT_TRIMMER_THT': { name: 'Pot Trimmer THT', width: 7, height: 7, svg: '<rect x="0" y="0" width="7" height="7" fill="#666" stroke="white" stroke-width="0.2" rx="1"/><circle cx="1.5" cy="3.5" r="0.7" fill="#b87333"/><circle cx="3.5" cy="1.5" r="0.7" fill="#b87333"/><circle cx="5.5" cy="3.5" r="0.7" fill="#b87333"/>', properties: { ref:'RV?', '3d_height': 4, drill: 0.8}},
+                    'FUSE_HOLDER_5X20MM': { name: 'Fuse Holder 5x20mm', width: 22, height: 7, svg: '<rect x="0" y="0" width="22" height="7" fill="#444" stroke="white" stroke-width="0.2"/><rect x="2" y="1.5" width="3" height="4" fill="#b87333"/><rect x="17" y="1.5" width="3" height="4" fill="#b87333"/>', properties: { ref:'F?', '3d_height': 8, drill: 1.2}},
+                    'DIP8_EXAMPLE': { name: 'IC DIP8 Example', width: 9.8, height: 10.16, svg: '<rect x="0" y="0" width="7.62" height="10.16" transform="translate(1.09,0)" fill="#333" stroke="white" stroke-width="0.1"/><path d="M1.09 2.54 A1.27 1.27 0 0 0 0 1.27 A1.27 1.27 0 0 0 1.09 0 H8.71 A1.27 1.27 0 0 0 9.8 1.27 A1.27 1.27 0 0 0 8.71 2.54" fill="#333" stroke="white" stroke-width="0.1"/>' + Array.from({length:4}).map((_,i) => `<rect x="0" y="${1.27+i*2.54}" width="2.08" height="0.8" fill="#b87333"/><rect x="7.72" y="${1.27+i*2.54}" width="2.08" height="0.8" fill="#b87333"/>`).join(''), properties: { ref:'U?', '3d_height': 3.5, drill: 0.8}},
+                    'SOIC10_EXAMPLE': {name: 'IC SOIC10 Example', width: 6.2, height: 4, svg:'<rect x="0" y="0" width="6.2" height="4" fill="#333" stroke="white" stroke-width="0.1" rx="0.2"/>' + Array.from({length:5}).map((_,i) => `<rect x="0.2" y="${0.3 + i*0.65}" width="0.8" height="0.4" fill="#b87333"/><rect x="5.2" y="${0.3 + i*0.65}" width="0.8" height="0.4" fill="#b87333"/>`).join('') + '<circle cx="0.6" cy="0.6" r="0.2" fill="white"/>', properties: {ref:'U?', '3d_height': 1.75}},
+                    'TO220_EXAMPLE': {name: 'Regulator TO220 Example', width:10.2, height:15.3, svg:'<rect x="0" y="0" width="10.2" height="15.3" fill="#444" stroke="white" stroke-width="0.1"/><rect x="1.35" y="12.8" width="1.5" height="1.5" fill="#b87333"/><rect x="4.35" y="12.8" width="1.5" height="1.5" fill="#b87333"/><rect x="7.35" y="12.8" width="1.5" height="1.5" fill="#b87333"/><rect x="3.5" y="0" width="3.2" height="3.2" fill="#b87333" rx="1.6"/>', properties: {ref:'U?', '3d_height': 4.5, drill:0.9}},
+                    'INDUCTOR_SMD': {name: 'Inductor SMD Example', width:3.2, height:2.5, svg:'<rect x="0" y="0" width="3.2" height="2.5" fill="#5a6688" stroke="white" stroke-width="0.1"/><rect x="0.2" y="0.5" width="0.8" height="1.5" fill="#b87333"/><rect x="2.2" y="0.5" width="0.8" height="1.5" fill="#b87333"/>', properties: {ref:'L?', '3d_height':2}},
+                    'PAD_ROUND': {
+                        name: 'Pad Circular THT', width: 1.6, height: 1.6,
+                        svg: `<circle cx="0.8" cy="0.8" r="0.8" fill="#b87333" stroke="#774f28" stroke-width="0.05" />`,
+                        properties: { ref: 'P?', type: 'round', diameter: 1.6, drill: 0.8, layer: 'Multi-Layer', '3d_height': DEFAULT_PAD_THICKNESS_3D }
+                    },
+                    'PAD_RECT_SMD': {
+                        name: 'Pad Rectangular SMD', width: 1.2, height: 0.8,
+                        svg: `<rect x="0" y="0" width="1.2" height="0.8" fill="#b87333" stroke="#774f28" stroke-width="0.05" rx="0.1" />`,
+                        properties: { ref: 'P?', type: 'rect', pad_width: 1.2, pad_height: 0.8, layer: 'TopCopper', '3d_height': DEFAULT_PAD_THICKNESS_3D }
+                    }
+                },
+            isPanning: false,
+            panStart: { x: 0, y: 0 },
+            isDraggingElement: false,
+            isSelectingArea: false,
+            selectionRectStart: { clientX: 0, clientY: 0 },
+            draggedElementInitialPositions: new Map(),
+            lastMousePosSVG: { x: 0, y: 0 },
+            activeSidebarTab: 'library', 
+        };
+
+        // --- DOM Elements ---
+        const DOM = {
+            sidebar: document.getElementById('sidebar'),
+            sidebarTabs: document.querySelectorAll('.sidebar-tab'),
+            panels: {
+                library: { schematic: document.getElementById('symbol-library-panel'), layout: document.getElementById('footprint-library-panel'), },
+                layersOrNets: { schematic: document.getElementById('nets-panel'), layout: document.getElementById('layers-panel'), },
+                properties: document.getElementById('properties-panel'),
+                threeOptions: document.getElementById('three-options-panel'), 
+            },
+            threeColorInputs: { 
+                pcb: document.getElementById('three-color-pcb'),
+                component: document.getElementById('three-color-component'),
+                pad: document.getElementById('three-color-pad'),
+                track: document.getElementById('three-color-track'),
+            },
+            btnReload3DView: document.getElementById('btn-reload-3d-view'),
+            symbolLibraryList: document.getElementById('symbol-library-list'),
+            footprintLibraryList: document.getElementById('footprint-library-list'),
+            netListDisplay: document.getElementById('net-list'),
+            propertiesContent: document.getElementById('properties-content'),
+            viewModeToolbar: document.getElementById('view-mode-toolbar'),
+            modeSchematicBtn: document.getElementById('mode-schematic'),
+            modeLayoutBtn: document.getElementById('mode-layout'),
+            mode3DBtn: document.getElementById('mode-3d'),
+            modeExampleBtn: document.getElementById('mode-example'),
+            canvasToolbar: document.getElementById('canvas-toolbar'),
+            toolSchematicSelectBtn: document.getElementById('tool-schematic-select'),
+            toolDrawWireBtn: document.getElementById('tool-draw-wire'),
+            toolLayoutSelectBtn: document.getElementById('tool-layout-select'),
+            toolDrawTrackBtn: document.getElementById('tool-draw-track'),
+            zoomInBtn: document.getElementById('zoom-in'),
+            zoomOutBtn: document.getElementById('zoom-out'),
+            zoomFitBtn: document.getElementById('zoom-fit'),
+            exportGerberBtn: document.getElementById('export-gerber'),
+            importGerberBtn: document.getElementById('import-gerber'),
+            btnUpdateLayoutFromSchematic: document.getElementById('btn-update-layout-from-schematic'),
+            canvasViewsContainer: document.getElementById('canvas-views-container'), 
+            schematicCanvasView: document.getElementById('schematic-canvas-view'),
+            schematicSvgCanvas: document.getElementById('schematic-svg-canvas'),
+            schematicElementsGroup: document.getElementById('schematic-elements-group'),
+            schematicGridRect: document.getElementById('schematic-grid-rect'),
+            tempWireLine: document.getElementById('temp-wire-line'),
+            layoutCanvasView: document.getElementById('layout-canvas-view'),
+            layoutSvgCanvas: document.getElementById('layout-svg-canvas'),
+            layoutElementsGroup: document.getElementById('layout-elements-group'),
+            ratsnestGroup: document.getElementById('ratsnest-group'),
+            layoutGridRect: document.getElementById('layout-grid-rect'),
+            layoutGridRectFine: document.getElementById('layout-fine-grid-pattern'),
+            tempTrackLine: document.getElementById('temp-track-line'),
+            selectionRect: document.getElementById('selection-rect'),
+            threeCanvasContainer: document.getElementById('three-canvas-container'),
+            statusCoords: document.getElementById('status-coords'),
+            statusZoom: document.getElementById('status-zoom'),
+            statusSelection: document.getElementById('status-selection'),
+            statusTool: document.getElementById('status-tool'),
+        };
+
+        // --- Tutorial Dinámico ---
+        const tutorialSteps = [
+            { elementSelector: '#sidebar-header h1', title: 'Bienvenido a Maker Suite de CalypsoLabs', content: 'Este tutorial te guiará por el flujo de trabajo: Esquemático, Diseño PCB (Layout) y Vista 3D. ¡Empecemos!', position: 'bottom', },
+            { elementSelector: '#mode-example', title: 'Opción: Cargar Ejemplo', content: 'Si lo prefieres, puedes hacer clic aquí para cargar un circuito de ejemplo (MCU, ISP, LED) ya ruteado y listo para ver en 3D.', position: 'bottom', },
+            { elementSelector: '#mode-schematic', title: '1. Modo Esquemático', content: 'Actualmente estás en el modo Esquemático. Aquí defines la lógica de tu circuito usando símbolos y conectándolos con cables (wires/nets). Es el primer paso en el diseño electrónico.', position: 'bottom', onBeforeShow: () => { if (AppState.activeViewMode !== 'schematic') handleViewModeChange('schematic'); } },
+            { elementSelector: '.sidebar-tab[data-tab="library"]', title: 'Biblioteca de Símbolos', content: 'Este panel muestra los símbolos esquemáticos disponibles. Haz clic aquí si no está activo.', position: 'right', onBeforeShow: () => { if (AppState.activeViewMode !== 'schematic') handleViewModeChange('schematic'); if (AppState.activeSidebarTab !== 'library') { document.querySelector('.sidebar-tab[data-tab="library"]').click(); } }, waitForAction: { type: 'click', onElement: true, allowNextIfAlreadyActive: true } },
+            { elementSelector: '#symbol-library-list .library-item:first-child', title: 'Añadir un Símbolo', content: 'Arrastra un símbolo (ej. una Resistencia) desde la biblioteca al lienzo del esquemático. Los símbolos tienen pines para las conexiones.', position: 'right', },
+            { elementSelector: '#schematic-canvas-view', title: 'Colocar Símbolos', content: 'Coloca algunos símbolos en el lienzo. Puedes moverlos (herramienta Seleccionar) y rotarlos (tecla "R").', position: 'top', highlightWholeElement: true, onBeforeShow: () => { if (AppState.activeViewMode !== 'schematic') handleViewModeChange('schematic'); if (AppState.schematicElements.filter(el => el.type === 'symbol').length === 0) { const firstSymbolType = Object.keys(AppState.schematicSymbolLibrary)[0]; if (firstSymbolType) { const symbolDef = AppState.schematicSymbolLibrary[firstSymbolType]; const snapSize = AppState.schematicGridSize / 2; const newElement = { id: generateId('sch'), type: 'symbol', symbolId: firstSymbolType, x: snapToGrid( (DOM.schematicCanvasView.clientWidth / AppState.schematicZoomLevel / 2) - (symbolDef.width / 2) - (AppState.schematicPan.x / AppState.schematicZoomLevel), snapSize ), y: snapToGrid( (DOM.schematicCanvasView.clientHeight / AppState.schematicZoomLevel / 2) - (symbolDef.height / 2) - (AppState.schematicPan.y / AppState.schematicZoomLevel), snapSize ), rotation: 0, properties: { ...JSON.parse(JSON.stringify(symbolDef.properties)), ref: symbolDef.prefix + '1' }, pinConnections: {} }; AppState.schematicElements.push(newElement); renderSchematicSVG(); } } } },
+            { elementSelector: '#tool-draw-wire', title: 'Herramienta Dibujar Cable (Wire)', content: 'Selecciona esta herramienta para conectar los pines de los símbolos. Estos cables representan las conexiones eléctricas (nets).', position: 'bottom', waitForAction: { type: 'click', onElement: true } },
+            { elementSelector: '#schematic-canvas-view', title: 'Conectar Símbolos', content: 'Haz clic en un pin de un símbolo y luego en un pin de otro símbolo para crear una conexión. Los cables completados se vuelven verdes.', position: 'top', highlightWholeElement: true, onBeforeShow: () => { if (AppState.activeViewMode !== 'schematic') handleViewModeChange('schematic'); handleSchematicToolChange('wire'); } },
+            { elementSelector: '.sidebar-tab[data-tab="properties"]', title: 'Propiedades del Símbolo', content: 'Selecciona un símbolo y haz clic aquí para ver/editar sus propiedades, como la Referencia (ej. R1) o el Valor (ej. 10kΩ).', position: 'right', waitForAction: { type: 'click', onElement: true, allowNextIfAlreadyActive: true }, onBeforeShow: () => { if (AppState.activeViewMode !== 'schematic') handleViewModeChange('schematic'); if (AppState.schematicElements.filter(e => e.type === 'symbol').length > 0 && AppState.selectedSchematicElementIds.length === 0) { AppState.selectedSchematicElementIds = [AppState.schematicElements.find(e => e.type === 'symbol').id]; renderSchematicSVG(); } } },
+            { elementSelector: '#btn-update-layout-from-schematic', title: '2. Actualizar PCB desde Esquemático', content: 'Una vez que tu esquemático esté listo, haz clic en este botón (en el panel "Redes") para transferir los componentes y sus conexiones al modo de diseño PCB.', position: 'right', onBeforeShow: () => { if (AppState.activeViewMode !== 'schematic') handleViewModeChange('schematic'); if(AppState.activeSidebarTab !== 'layersOrNets') { document.querySelector('.sidebar-tab[data-tab="layersOrNets"]').click(); } }, waitForAction: { type: 'click', onElement: true, delayAfterAction: 500} },
+            { elementSelector: '#mode-layout', title: '3. Modo Diseño PCB (Layout)', content: 'Ahora estás en el modo Layout. Los componentes de tu esquemático (como "huellas" o footprints) aparecen aquí, listos para ser colocados. Las líneas amarillas (ratsnest) indican las conexiones que necesitas rutear.', position: 'bottom', onBeforeShow: () => { if (AppState.activeViewMode !== 'layout') handleViewModeChange('layout'); } },
+            { elementSelector: '.sidebar-tab[data-tab="library"]', title: 'Biblioteca de Huellas (Footprints)', content: 'Si necesitas añadir huellas manualmente o cambiar una asignada, puedes hacerlo desde aquí. Por ahora, las huellas se asignaron automáticamente desde el esquemático.', position: 'right', onBeforeShow: () => { if (AppState.activeViewMode !== 'layout') handleViewModeChange('layout'); if (AppState.activeSidebarTab !== 'library') { document.querySelector('.sidebar-tab[data-tab="library"]').click(); } } },
+            { elementSelector: '#layout-canvas-view', title: 'Colocar Huellas', content: 'Arrastra las huellas para organizar tu PCB. Considera el flujo de la señal, el tamaño de los componentes y las interferencias.', position: 'top', highlightWholeElement: true, },
+            { elementSelector: '#tool-draw-track', title: 'Herramienta Dibujar Pista (Track)', content: 'Selecciona esta herramienta para dibujar las pistas de cobre que materializan las conexiones del ratsnest.', position: 'bottom', waitForAction: { type: 'click', onElement: true } },
+            { elementSelector: '#layout-canvas-view', title: 'Rutear Pistas', content: 'Haz clic en un pad (contacto metálico de una huella) y luego en otro pad conectado por el ratsnest para crear una pista de cobre. Completa todas las conexiones.', position: 'top', highlightWholeElement: true, onBeforeShow: () => { if (AppState.activeViewMode !== 'layout') handleViewModeChange('layout'); handleLayoutToolChange('track'); } },
+            { elementSelector: '.sidebar-tab[data-tab="layersOrNets"]', title: 'Gestor de Capas', content: 'Aquí puedes controlar la visibilidad de las diferentes capas del PCB (cobre superior/inferior, serigrafía, etc.). Haz clic para abrirlo.', position: 'right', waitForAction: { type: 'click', onElement: true, allowNextIfAlreadyActive: true }, onBeforeShow: () => { if (AppState.activeViewMode !== 'layout') handleViewModeChange('layout'); } },
+            { elementSelector: '#mode-3d', title: '4. Vista 3D', content: 'Una vez que tu PCB esté ruteado, haz clic aquí para ver una representación 3D. Esto es útil para verificar la colocación y el aspecto final.', position: 'bottom', waitForAction: { type: 'click', onElement: true, delayAfterAction: 1000 } },
+            { elementSelector: '#three-canvas-container', title: 'Explorando en 3D', content: 'Usa el ratón para rotar (clic izquierdo y arrastrar), hacer zoom (rueda) y mover la vista (clic derecho o central y arrastrar).', position: 'top', highlightWholeElement: true, onBeforeShow: () => { if (AppState.activeViewMode !== '3d') { const toggleBtn = document.getElementById('mode-3d'); if(toggleBtn && !toggleBtn.disabled) toggleBtn.click(); } }, },
+            { elementSelector: '#export-gerber', title: '5. Exportar Gerber', content: 'Cuando el diseño PCB esté completo, este botón generaría los archivos Gerber, que son el estándar para la fabricación de PCBs.', position: 'left', onBeforeShow: () => { if (AppState.activeViewMode === '3d') { document.getElementById('mode-layout').click(); } } },
+            { elementSelector: '#footer-status', title: '¡Tutorial Completado!', content: 'Has aprendido el flujo básico de diseño: Esquemático -> Layout PCB -> 3D. ¡Sigue explorando y creando!', position: 'top', highlightWholeElement: true }
+        ];
+        let currentTutorialStep = -1;
+        let tutorialPopover = null;
+
+        function createTutorialPopover() { if (tutorialPopover) tutorialPopover.remove(); tutorialPopover = document.createElement('div'); tutorialPopover.className = 'tutorial-popover'; document.body.appendChild(tutorialPopover); }
+        function removeTutorialHighlight() { const highlighted = document.querySelector('.tutorial-highlight'); if (highlighted) highlighted.classList.remove('tutorial-highlight'); }
+        function positionPopover(element, popover, positionPreference, highlightWhole = false) { if (!element || !popover) return; const elRect = element.getBoundingClientRect(); popover.style.display = 'block'; let top, left; const popoverRect = popover.getBoundingClientRect(); const margin = 10; if (elRect.bottom < 0 || elRect.top > window.innerHeight || elRect.right < 0 || elRect.left > window.innerWidth) { top = (window.innerHeight - popoverRect.height) / 2; left = (window.innerWidth - popoverRect.width) / 2; } else if (highlightWhole) { top = elRect.top + (elRect.height / 2) - (popoverRect.height / 2); left = elRect.left + (elRect.width / 2) - (popoverRect.width / 2); } else { switch (positionPreference) { case 'top': top = elRect.top - popoverRect.height - margin; left = elRect.left + (elRect.width / 2) - (popoverRect.width / 2); break; case 'bottom': top = elRect.bottom + margin; left = elRect.left + (elRect.width / 2) - (popoverRect.width / 2); break; case 'left': top = elRect.top + (elRect.height / 2) - (popoverRect.height / 2); left = elRect.left - popoverRect.width - margin; break; case 'right': default: top = elRect.top + (elRect.height / 2) - (popoverRect.height / 2); left = elRect.right + margin; break; } } left = Math.max(margin, Math.min(left, window.innerWidth - popoverRect.width - margin)); top = Math.max(margin, Math.min(top, window.innerHeight - popoverRect.height - margin)); popover.style.top = `${top + window.scrollY}px`; popover.style.left = `${left + window.scrollX}px`; }
+        function showTutorialStep(index) { removeTutorialHighlight(); if (!tutorialPopover) createTutorialPopover(); if (index < 0 || index >= tutorialSteps.length) { endTutorial(); return; } currentTutorialStep = index; const step = tutorialSteps[index]; let element = document.querySelector(step.elementSelector); if (!element && step.elementSelector === '#three-canvas-container' && AppState.activeViewMode === '3d' && DOM.threeCanvasContainer.firstChild) { element = DOM.threeCanvasContainer.querySelector('canvas') || DOM.threeCanvasContainer; } if (typeof step.onBeforeShow === 'function') { step.onBeforeShow(); element = document.querySelector(step.elementSelector); if (!element && step.elementSelector === '#three-canvas-container' && AppState.activeViewMode === '3d' && DOM.threeCanvasContainer.firstChild) { element = DOM.threeCanvasContainer.querySelector('canvas') || DOM.threeCanvasContainer; } } if (!element) { console.warn(`Tutorial step ${index}: Element ${step.elementSelector} not found. Trying next step.`); if(tutorialPopover){ tutorialPopover.innerHTML = `<h4>${step.title} (Elemento no encontrado)</h4><p>${step.content}</p><div class="tutorial-popover-nav">${index > 0 ? '<button id="tutorial-prev">Anterior</button>' : '<div></div>'}${index < tutorialSteps.length - 1 ? '<button id="tutorial-next">Siguiente</button>' : '<button id="tutorial-end">Finalizar</button>'}</div>${index < tutorialSteps.length - 1 ? '<button id="tutorial-skip" class="skip" style="margin-top:10px; width:100%;">Saltar Tutorial</button>' : ''}`; positionPopover(document.body, tutorialPopover, 'center', true); } if(document.getElementById('tutorial-next')) document.getElementById('tutorial-next').onclick = () => showTutorialStep(index + 1); if(document.getElementById('tutorial-prev')) document.getElementById('tutorial-prev').onclick = () => showTutorialStep(index - 1); if(document.getElementById('tutorial-end')) document.getElementById('tutorial-end').onclick = endTutorial; if(document.getElementById('tutorial-skip')) document.getElementById('tutorial-skip').onclick = endTutorial; return; } element.classList.add('tutorial-highlight'); if (typeof element.scrollIntoView === 'function' && !step.highlightWholeElement) { element.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' }); } tutorialPopover.innerHTML = `<h4>${step.title}</h4><p>${step.content}</p><div class="tutorial-popover-nav">${index > 0 ? '<button id="tutorial-prev">Anterior</button>' : '<div></div>'}${index < tutorialSteps.length - 1 ? '<button id="tutorial-next">Siguiente</button>' : '<button id="tutorial-end">Finalizar</button>'}</div>${index < tutorialSteps.length - 1 ? '<button id="tutorial-skip" class="skip" style="margin-top:10px; width:100%;">Saltar Tutorial</button>' : ''}`; setTimeout(() => { positionPopover(element, tutorialPopover, step.position, step.highlightWholeElement); }, 200); const nextBtn = document.getElementById('tutorial-next'); const prevBtn = document.getElementById('tutorial-prev'); const endBtn = document.getElementById('tutorial-end'); const skipBtn = document.getElementById('tutorial-skip'); const proceedToNextStep = () => { const currentStepConfig = tutorialSteps[currentTutorialStep]; if (currentStepConfig && currentStepConfig.waitForAction && typeof currentStepConfig.waitForAction.delayAfterAction === 'number') { setTimeout(() => showTutorialStep(currentTutorialStep + 1), currentStepConfig.waitForAction.delayAfterAction); } else { showTutorialStep(currentTutorialStep + 1); } }; if (step.waitForAction) { const actionElement = step.waitForAction.onElement ? element : document.querySelector(step.waitForAction.elementSelector || step.elementSelector); if (actionElement) { const actionListener = (event) => { if(event.target.closest('.tutorial-popover')) return; if (step.waitForAction.allowNextIfAlreadyActive && actionElement.classList.contains('active')){} else { actionElement.removeEventListener(step.waitForAction.type, actionListener, { once: true }); } proceedToNextStep(); }; if (step.waitForAction.allowNextIfAlreadyActive && actionElement.classList.contains('active')){} else { actionElement.addEventListener(step.waitForAction.type, actionListener, { once: true }); } } else { console.warn(`Tutorial action element not found for step ${index}: ${step.waitForAction.elementSelector || step.elementSelector}`); } } if (nextBtn) nextBtn.onclick = proceedToNextStep; if (prevBtn) prevBtn.onclick = () => showTutorialStep(currentTutorialStep - 1); if (endBtn) endBtn.onclick = endTutorial; if (skipBtn) skipBtn.onclick = endTutorial; }
+        function startTutorial() { currentTutorialStep = -1; localStorage.removeItem('makerSuiteTutorialCompleted_v1'); showTutorialStep(0); }
+        function endTutorial() { removeTutorialHighlight(); if (tutorialPopover) { tutorialPopover.remove(); tutorialPopover = null; } currentTutorialStep = -1; localStorage.setItem('makerSuiteTutorialCompleted_v1', 'true'); }
+
+        // --- Utility Functions ---
+        function getMousePositionInSVG(event, svgCanvas, groupElement) { const CTM = groupElement.getScreenCTM(); if (!CTM) { const rect = svgCanvas.getBoundingClientRect(); const zoom = AppState.activeViewMode === 'schematic' ? AppState.schematicZoomLevel : AppState.layoutZoomLevel; const pan = AppState.activeViewMode === 'schematic' ? AppState.schematicPan : AppState.layoutPan; return { x: (event.clientX - rect.left) / zoom - pan.x / zoom, y: (event.clientY - rect.top) / zoom - pan.y / zoom }; } return { x: (event.clientX - CTM.e) / CTM.a, y: (event.clientY - CTM.f) / CTM.d }; }
+        function snapToGrid(value, customGridSize) { const gridSize = customGridSize || (AppState.activeViewMode === 'schematic' ? AppState.schematicGridSize / 2 : AppState.layoutGridSize / 4); if (gridSize <= 0) return value; return Math.round(value / gridSize) * gridSize; }
+        function generateId(prefix = 'el') { let nextId; if (AppState.activeViewMode === 'schematic' || prefix === 'sch' || prefix === 'w' || prefix.startsWith('ex_sch') || prefix.startsWith('ex_w')) { nextId = AppState.nextSchematicElementId++; } else { nextId = AppState.nextLayoutElementId++; } return `${prefix}_${nextId}_${Date.now().toString(36)}${Math.random().toString(36).substring(2, 7)}`; }
+        function getSchematicPinAbsPos(symbolElementId, pinId) { const symbolElement = AppState.schematicElements.find(s => s.id === symbolElementId); if (!symbolElement || symbolElement.type !== 'symbol') { console.warn(`getSchematicPinAbsPos: Symbol element ${symbolElementId} not found or not a symbol.`); return null; } const symbolDef = AppState.schematicSymbolLibrary[symbolElement.symbolId]; if (!symbolDef || !symbolDef.pins) { console.warn(`getSchematicPinAbsPos: Symbol definition or pins not found for ${symbolElement.symbolId}.`); return null; } const pinDef = symbolDef.pins.find(p => p.id === pinId); if (!pinDef) { console.warn(`getSchematicPinAbsPos: Pin definition ${pinId} not found in symbol ${symbolElement.symbolId}.`); return null; } const symbolCenterX = symbolDef.width / 2; const symbolCenterY = symbolDef.height / 2; const rotationRad = (symbolElement.rotation || 0) * Math.PI / 180; const cosR = Math.cos(rotationRad); const sinR = Math.sin(rotationRad); const relPinX = pinDef.x - symbolCenterX; const relPinY = pinDef.y - symbolCenterY; const rotatedPinX = relPinX * cosR - relPinY * sinR; const rotatedPinY = relPinX * sinR + relPinY * cosR; return { x: symbolElement.x + symbolCenterX + rotatedPinX, y: symbolElement.y + symbolCenterY + rotatedPinY, elementId: symbolElementId, pinId: pinId }; }
+
+        // --- Library Population ---
+        function populateSchematicSymbolLibrary() { DOM.symbolLibraryList.innerHTML = ''; for (const type in AppState.schematicSymbolLibrary) { const sym = AppState.schematicSymbolLibrary[type]; const itemDiv = document.createElement('div'); itemDiv.className = 'library-item'; itemDiv.draggable = true; itemDiv.dataset.symbolType = type; itemDiv.title = `Arrastrar para añadir ${sym.name}`; const svgPreview = document.createElementNS(SVG_NS, 'svg'); const previewSize = 32; svgPreview.setAttribute('viewBox', `0 0 ${sym.width} ${sym.height}`); svgPreview.setAttribute('width', previewSize.toString()); svgPreview.setAttribute('height', previewSize.toString()); svgPreview.setAttribute('preserveAspectRatio', 'xMidYMid meet'); svgPreview.innerHTML = sym.svg; Array.from(svgPreview.querySelectorAll('line, rect, circle, path, text')).forEach(el => { if (!el.getAttribute('stroke')) el.setAttribute('stroke', 'currentColor'); if (!el.getAttribute('fill') && (el.tagName === 'text' || el.tagName === 'circle' && el.getAttribute('cx'))) { el.setAttribute('fill', 'currentColor'); } else if (!el.getAttribute('fill')) { el.setAttribute('fill', 'none'); } }); const nameSpan = document.createElement('span'); nameSpan.textContent = sym.name; itemDiv.appendChild(svgPreview); itemDiv.appendChild(nameSpan); DOM.symbolLibraryList.appendChild(itemDiv); } }
+        function populateFootprintLibrary() { DOM.footprintLibraryList.innerHTML = ''; for (const type in AppState.footprintLibrary) { const comp = AppState.footprintLibrary[type]; const itemDiv = document.createElement('div'); itemDiv.className = 'library-item'; itemDiv.draggable = true; itemDiv.dataset.footprintType = type; itemDiv.title = `Arrastrar para añadir ${comp.name}`; const svgPreview = document.createElementNS(SVG_NS, 'svg'); const previewDisplaySize = 32; const compWidth = comp.width || 10; const compHeight = comp.height || 10; svgPreview.setAttribute('viewBox', `0 0 ${compWidth} ${compHeight}`); svgPreview.setAttribute('width', previewDisplaySize.toString()); svgPreview.setAttribute('height', previewDisplaySize.toString()); svgPreview.setAttribute('preserveAspectRatio', 'xMidYMid meet'); const g = document.createElementNS(SVG_NS, 'g'); g.innerHTML = comp.svg; svgPreview.appendChild(g); const nameSpan = document.createElement('span'); nameSpan.textContent = comp.name; itemDiv.appendChild(svgPreview); itemDiv.appendChild(nameSpan); DOM.footprintLibraryList.appendChild(itemDiv); } }
+
+        // --- Rendering ---
+        function renderSchematicSVG() { if (!DOM.schematicElementsGroup || !DOM.schematicSvgCanvas) return; DOM.schematicElementsGroup.setAttribute('transform', `translate(${AppState.schematicPan.x}, ${AppState.schematicPan.y}) scale(${AppState.schematicZoomLevel})`); const gridPattern = DOM.schematicSvgCanvas.querySelector('#schematic-grid-pattern'); if (gridPattern) gridPattern.setAttribute('patternTransform', `scale(${1 / AppState.schematicZoomLevel})`); const existingOnScreenIds = new Set(); AppState.schematicElements.forEach(el => { if (!el || !el.id) return; existingOnScreenIds.add(el.id); let svgEl = DOM.schematicElementsGroup.querySelector(`#${el.id}`); if (!svgEl) { if (el.type === 'symbol') { const g = document.createElementNS(SVG_NS, 'g'); g.setAttribute('id', el.id); g.dataset.elementId = el.id; g.dataset.elementType = el.type; const symbolDef = AppState.schematicSymbolLibrary[el.symbolId]; if (symbolDef) { g.innerHTML = symbolDef.svg; symbolDef.pins.forEach(pin => { const pinCircle = document.createElementNS(SVG_NS, 'circle'); pinCircle.setAttribute('cx', pin.x); pinCircle.setAttribute('cy', pin.y); pinCircle.setAttribute('r', '2'); pinCircle.classList.add('schematic-symbol-pin'); pinCircle.dataset.pinId = pin.id; g.appendChild(pinCircle); }); const refDesText = document.createElementNS(SVG_NS, 'text'); refDesText.setAttribute('x', symbolDef.width / 2); refDesText.setAttribute('y', -5); refDesText.setAttribute('font-size', '8'); refDesText.setAttribute('fill', 'var(--calypso-text-secondary)'); refDesText.setAttribute('text-anchor', 'middle'); refDesText.textContent = el.properties.ref || ''; refDesText.classList.add('schematic-refdes'); g.appendChild(refDesText); } DOM.schematicElementsGroup.appendChild(g); svgEl = g; } else if (el.type === 'wire') { const line = document.createElementNS(SVG_NS, 'line'); line.setAttribute('id', el.id); line.dataset.elementId = el.id; line.dataset.elementType = el.type; DOM.schematicElementsGroup.appendChild(line); svgEl = line; } } if (svgEl) { if (el.type === 'symbol') { const symbolDef = AppState.schematicSymbolLibrary[el.symbolId]; svgEl.setAttribute('transform', `translate(${el.x || 0}, ${el.y || 0}) rotate(${el.rotation || 0}, ${symbolDef.width/2}, ${symbolDef.height/2})`); svgEl.setAttribute('class', `svg-element ${el.type}`); const refDesTextEl = svgEl.querySelector('.schematic-refdes'); if (refDesTextEl && refDesTextEl.textContent !== el.properties.ref) refDesTextEl.textContent = el.properties.ref || ''; } else if (el.type === 'wire') { svgEl.setAttribute('x1', el.p1.x); svgEl.setAttribute('y1', el.p1.y); svgEl.setAttribute('x2', el.p2.x); svgEl.setAttribute('y2', el.p2.y); svgEl.setAttribute('class', `svg-element wire-segment ${el.type}`); } if (AppState.selectedSchematicElementIds.includes(el.id)) svgEl.classList.add('selected'); else svgEl.classList.remove('selected'); } }); Array.from(DOM.schematicElementsGroup.children).forEach(child => { if (child.id && child.dataset.elementId && !existingOnScreenIds.has(child.dataset.elementId)) child.remove(); }); updateStatusBar(); updatePropertiesPanel(); }
+        function renderLayoutSVG() { if (!DOM.layoutElementsGroup || !DOM.layoutSvgCanvas) return; DOM.layoutElementsGroup.setAttribute('transform', `translate(${AppState.layoutPan.x}, ${AppState.layoutPan.y}) scale(${AppState.layoutZoomLevel})`); const gridPattern = DOM.layoutSvgCanvas.querySelector('#layout-grid-pattern'); const fineGridPattern = DOM.layoutSvgCanvas.querySelector('#layout-fine-grid-pattern'); if (gridPattern) gridPattern.setAttribute('patternTransform', `scale(${1 / AppState.layoutZoomLevel})`); if (fineGridPattern) fineGridPattern.setAttribute('patternTransform', `scale(${1 / AppState.layoutZoomLevel})`); const existingOnScreenIds = new Set(); AppState.layoutElements.forEach(el => { if (!el || !el.id) return; existingOnScreenIds.add(el.id); let svgEl = DOM.layoutElementsGroup.querySelector(`#${el.id}`); if (!svgEl) { if (el.type === 'footprint' || el.type === 'pad') { const g = document.createElementNS(SVG_NS, 'g'); g.setAttribute('id', el.id); g.dataset.elementId = el.id; g.dataset.elementType = el.type; g.innerHTML = el.svgString || ''; DOM.layoutElementsGroup.appendChild(g); svgEl = g; } else if (el.type === 'track') { const path = document.createElementNS(SVG_NS, 'path'); path.setAttribute('id', el.id); path.dataset.elementId = el.id; path.dataset.elementType = el.type; DOM.layoutElementsGroup.appendChild(path); svgEl = path; } } if (svgEl) { if (el.type === 'footprint' || el.type === 'pad') { svgEl.setAttribute('transform', `translate(${el.x || 0}, ${el.y || 0}) rotate(${el.rotation || 0} ${el.width/2} ${el.height/2})`); svgEl.setAttribute('class', `svg-element ${el.type}`); if (el.svgStringDirty && el.svgString) { svgEl.innerHTML = el.svgString; delete el.svgStringDirty; } } else if (el.type === 'track') { const d = (el.points && el.points.length > 0) ? el.points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x || 0} ${p.y || 0}`).join(' ') : ''; svgEl.setAttribute('d', d); svgEl.setAttribute('stroke', el.properties.color || 'var(--calypso-red)'); svgEl.setAttribute('stroke-width', (el.properties.width || 0.5)); svgEl.setAttribute('fill', 'none'); svgEl.setAttribute('stroke-linecap', 'round'); svgEl.setAttribute('stroke-linejoin', 'round'); svgEl.setAttribute('class', 'svg-element track'); } if (AppState.selectedLayoutElementIds.includes(el.id)) svgEl.classList.add('selected'); else svgEl.classList.remove('selected'); } }); Array.from(DOM.layoutElementsGroup.children).forEach(child => { if (child.id && child.dataset.elementId && !existingOnScreenIds.has(child.dataset.elementId)) child.remove(); }); renderRatsnest(); updateStatusBar(); updatePropertiesPanel(); if (AppState.activeViewMode === '3d' && threeModulesLoaded) requestAnimationFrame(updateThreeScene); }
+        function renderRatsnest() { DOM.ratsnestGroup.innerHTML = ''; if (AppState.activeViewMode !== 'layout') return; DOM.ratsnestGroup.setAttribute('transform', `translate(${AppState.layoutPan.x}, ${AppState.layoutPan.y}) scale(${AppState.layoutZoomLevel})`); const getFootprintCenter = (layoutEl) => { if (!layoutEl) return null; return { x: layoutEl.x + layoutEl.width / 2, y: layoutEl.y + layoutEl.height / 2 }; }; AppState.schematicElements.forEach(schEl => { if (schEl.type === 'wire' && schEl.startPinData && schEl.endPinData) { const startFootprint = AppState.layoutElements.find(fp => fp.schematicRefId === schEl.startPinData.elementId); const endFootprint = AppState.layoutElements.find(fp => fp.schematicRefId === schEl.endPinData.elementId); if (startFootprint && endFootprint && startFootprint.id !== endFootprint.id) { const p1 = getFootprintCenter(startFootprint); const p2 = getFootprintCenter(endFootprint); if (p1 && p2) { const line = document.createElementNS(SVG_NS, 'line'); line.setAttribute('x1', p1.x); line.setAttribute('y1', p1.y); line.setAttribute('x2', p2.x); line.setAttribute('y2', p2.y); line.setAttribute('class', 'ratsnest-line'); DOM.ratsnestGroup.appendChild(line); } } } }); }
+
+        // --- Update Status Bar and Properties Panel ---
+        function updateStatusBar() { let zoom, selectionCount, toolName; if (AppState.activeViewMode === 'schematic') { zoom = AppState.schematicZoomLevel; selectionCount = AppState.selectedSchematicElementIds.length; toolName = AppState.activeSchematicTool === 'select' ? 'Seleccionar Símbolo' : 'Dibujar Cable'; } else if (AppState.activeViewMode === 'layout') { zoom = AppState.layoutZoomLevel; selectionCount = AppState.selectedLayoutElementIds.length; toolName = AppState.activeLayoutTool === 'select' ? 'Seleccionar Huella' : 'Dibujar Pista'; } else { zoom = AppState.layoutZoomLevel; selectionCount = 0; toolName = "Vista 3D"; } DOM.statusZoom.textContent = `Zoom: ${(zoom * 100).toFixed(0)}%`; DOM.statusSelection.textContent = `Selección: ${selectionCount} el.`; DOM.statusTool.textContent = `Herramienta: ${toolName}`; }
+        function updatePropertiesPanel() { DOM.propertiesContent.innerHTML = ''; let selectedIds, elements; if (AppState.activeViewMode === 'schematic') { selectedIds = AppState.selectedSchematicElementIds; elements = AppState.schematicElements; } else if (AppState.activeViewMode === 'layout') { selectedIds = AppState.selectedLayoutElementIds; elements = AppState.layoutElements; } else { DOM.propertiesContent.innerHTML = '<p class="text-slate-400 text-sm p-2">Panel de propiedades no disponible en Vista 3D.</p>'; return; } if (selectedIds.length === 0) { DOM.propertiesContent.innerHTML = '<p class="text-slate-400 text-sm p-2">Seleccione un elemento para ver/editar sus propiedades.</p>'; return; } if (selectedIds.length === 1) { const elId = selectedIds[0]; const element = elements.find(e => e.id === elId); if (!element) { DOM.propertiesContent.innerHTML = '<p class="text-red-400 text-sm p-2">Error: Elemento no encontrado.</p>'; return; } const createField = (label, propKey, type, value, options = {}) => { const { step = null, readonly = false, selectOptions = null, rows = null, min = null, max = null } = options; const group = document.createElement('div'); group.className = 'property-group mb-2'; const lbl = document.createElement('label'); lbl.htmlFor = `prop-${propKey}`; lbl.textContent = label; lbl.className = 'block text-xs font-medium text-calypso-text-secondary mb-1'; group.appendChild(lbl); let input; if (type === 'select' && selectOptions) { input = document.createElement('select'); selectOptions.forEach(opt => { const optionEl = document.createElement('option'); optionEl.value = opt.value; optionEl.textContent = opt.label; if (opt.value == value) optionEl.selected = true; input.appendChild(optionEl); }); } else if (type === 'textarea') { input = document.createElement('textarea'); if (rows) input.rows = rows; } else { input = document.createElement('input'); input.type = type; if (step !== null) input.step = step; if (min !== null) input.min = min; if (max !== null) input.max = max; } input.className = 'mt-1 block w-full rounded-md bg-calypso-panel-bg border-calypso-border shadow-sm focus:border-calypso-accent focus:ring focus:ring-calypso-accent focus:ring-opacity-50 text-sm px-2 py-1 text-calypso-text-primary'; if (readonly) input.classList.add('bg-slate-700', 'cursor-not-allowed'); input.id = `prop-${propKey}`; input.value = value === undefined || value === null ? '' : value; if (readonly) input.readOnly = true; input.addEventListener('change', (e) => { let changedValue = e.target.value; if (type === 'number') changedValue = e.target.value === '' ? undefined : parseFloat(e.target.value); if (element.hasOwnProperty(propKey)) element[propKey] = changedValue; else if (element.properties && element.properties.hasOwnProperty(propKey)) element.properties[propKey] = changedValue; else { if (!element.properties) element.properties = {}; element.properties[propKey] = changedValue; } if (AppState.activeViewMode === 'schematic') renderSchematicSVG(); else renderLayoutSVG(); }); group.appendChild(input); return group; }; DOM.propertiesContent.appendChild(createField('ID', 'id', 'text', element.id, {readonly: true})); DOM.propertiesContent.appendChild(createField('Tipo', 'type', 'text', element.type, {readonly: true})); if (element.type === 'symbol' || element.type === 'footprint' || element.type === 'pad') { DOM.propertiesContent.appendChild(createField('Posición X', 'x', 'number', element.x, {step: 0.1})); DOM.propertiesContent.appendChild(createField('Posición Y', 'y', 'number', element.y, {step: 0.1})); DOM.propertiesContent.appendChild(createField('Rotación (°)', 'rotation', 'number', element.rotation || 0, {step: 1, min:0, max:359})); } if (element.properties) { for (const key in element.properties) { let fieldType = 'text'; let step = null; const propValue = element.properties[key]; if (typeof propValue === 'number') { fieldType = 'number'; step = (key.toLowerCase().includes('height') || key.toLowerCase().includes('width') || key.toLowerCase().includes('diameter') || key.toLowerCase().includes('drill') || key.toLowerCase().includes('pitch')) ? 0.001 : (Number.isInteger(propValue) ? 1 : 0.01); } const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()).replace(/3d/i, '3D'); DOM.propertiesContent.appendChild(createField(label, key, fieldType, propValue, { step })); } } } else { DOM.propertiesContent.innerHTML = `<p class="text-slate-400 text-sm p-2">${selectedIds.length} elementos seleccionados. Edición múltiple no implementada.</p>`; } }
+
+        // --- Event Handlers ---
+        function handleViewModeChange(newMode) { if (newMode === 'example') { handleLoadExampleAction(); return; } if (AppState.activeViewMode === newMode && newMode !== '3d') { return; } if (newMode === '3d' || AppState.activeViewMode === '3d') { disposeThreeScene(); } AppState.activeViewMode = newMode;  if (newMode === '3d') {loadThreeJSModules().then(() => {if (threeModulesLoaded) {initThreeJS(); updateThreeScene(); animateThreeJS();}}).catch(err => console.error("3D No se pudo inicializar por fallo de carga de modulos:", err));}
+        DOM.modeSchematicBtn.classList.toggle('active', newMode === 'schematic'); DOM.modeLayoutBtn.classList.toggle('active', newMode === 'layout'); DOM.mode3DBtn.classList.toggle('active', newMode === '3d');  DOM.schematicCanvasView.classList.toggle('active-view', newMode === 'schematic'); DOM.layoutCanvasView.classList.toggle('active-view', newMode === 'layout'); DOM.threeCanvasContainer.classList.toggle('active-view', newMode === '3d'); Array.from(DOM.canvasToolbar.children).forEach(tool => { const toolMode = tool.dataset.toolMode; if (toolMode) { tool.classList.toggle('hidden', toolMode !== newMode); } if (tool.classList.contains('toolbar-separator') && tool.dataset.toolMode) { tool.classList.toggle('hidden', tool.dataset.toolMode !== newMode); } }); [DOM.zoomInBtn, DOM.zoomOutBtn, DOM.zoomFitBtn].forEach(btn => { if (!btn.dataset.toolMode) btn.classList.remove('hidden'); }); const common2DTools = [DOM.zoomInBtn, DOM.zoomOutBtn, DOM.zoomFitBtn]; const schematicTools = [DOM.toolSchematicSelectBtn, DOM.toolDrawWireBtn]; const layoutTools = [DOM.toolLayoutSelectBtn, DOM.toolDrawTrackBtn, DOM.exportGerberBtn, DOM.importGerberBtn]; if (newMode === '3d') { [...common2DTools, ...schematicTools, ...layoutTools].forEach(btn => { if(btn) btn.disabled = true; }); } else { common2DTools.forEach(btn => { if(btn) btn.disabled = false; }); schematicTools.forEach(btn => { if(btn) btn.disabled = (newMode !== 'schematic'); }); layoutTools.forEach(btn => { if(btn) btn.disabled = (newMode !== 'layout'); }); } const libraryTab = DOM.sidebarTabs[0]; const layersOrNetsTab = DOM.sidebarTabs[1]; DOM.panels.library.schematic.classList.add('hidden'); DOM.panels.library.layout.classList.add('hidden'); DOM.panels.layersOrNets.schematic.classList.add('hidden'); DOM.panels.layersOrNets.layout.classList.add('hidden'); if (newMode === 'schematic') { libraryTab.textContent = 'Símbolos'; libraryTab.title = 'Panel de Símbolos'; layersOrNetsTab.textContent = 'Redes'; layersOrNetsTab.title = 'Panel de Redes'; if (AppState.activeSidebarTab === 'library') DOM.panels.library.schematic.classList.remove('hidden'); if (AppState.activeSidebarTab === 'layersOrNets') DOM.panels.layersOrNets.schematic.classList.remove('hidden'); handleSchematicToolChange(AppState.activeSchematicTool || 'select'); renderSchematicSVG(); setCursorForView(AppState.activeSchematicTool || 'select'); } else if (newMode === 'layout') { libraryTab.textContent = 'Huellas'; libraryTab.title = 'Panel de Huellas'; layersOrNetsTab.textContent = 'Capas'; layersOrNetsTab.title = 'Panel de Capas'; if (AppState.activeSidebarTab === 'library') DOM.panels.library.layout.classList.remove('hidden'); if (AppState.activeSidebarTab === 'layersOrNets') DOM.panels.layersOrNets.layout.classList.remove('hidden'); handleLayoutToolChange(AppState.activeLayoutTool || 'select'); renderLayoutSVG(); setCursorForView(AppState.activeLayoutTool || 'select'); } else if (newMode === '3d') { libraryTab.textContent = 'Info 3D'; layersOrNetsTab.textContent = 'Opciones 3D'; DOM.panels.library.schematic.classList.add('hidden'); DOM.panels.library.layout.classList.add('hidden'); DOM.panels.layersOrNets.schematic.classList.add('hidden'); DOM.panels.layersOrNets.layout.classList.add('hidden'); loadThreeJSModules().then(() => { if (threeModulesLoaded) { initThreeJS(); updateThreeScene(); animateThreeJS(); } }).catch(err => console.error("3D No se pudo inicializar por fallo de carga de modulos:", err)); setCursorForView('default'); } handleSidebarTabClick({ target: document.querySelector('#sidebar-tabs .sidebar-tab.active') || DOM.sidebarTabs[0] }); updateStatusBar(); }
+        function handleSidebarTabClick(event) { const clickedTab = event.target.closest('.sidebar-tab'); if (!clickedTab) return; const newTabName = clickedTab.dataset.tab; AppState.activeSidebarTab = newTabName; DOM.sidebarTabs.forEach(tab => tab.classList.remove('active')); clickedTab.classList.add('active'); if(DOM.panels.library.schematic) DOM.panels.library.schematic.classList.add('hidden'); if(DOM.panels.library.layout) DOM.panels.library.layout.classList.add('hidden'); if(DOM.panels.layersOrNets.schematic) DOM.panels.layersOrNets.schematic.classList.add('hidden'); if(DOM.panels.layersOrNets.layout) DOM.panels.layersOrNets.layout.classList.add('hidden'); if(DOM.panels.properties) DOM.panels.properties.classList.add('hidden'); if(DOM.panels.threeOptions) DOM.panels.threeOptions.classList.add('hidden'); if (AppState.activeSidebarTab === 'library') { if (AppState.activeViewMode === 'schematic' && DOM.panels.library.schematic) DOM.panels.library.schematic.classList.remove('hidden'); else if (AppState.activeViewMode === 'layout' && DOM.panels.library.layout) DOM.panels.library.layout.classList.remove('hidden'); } else if (AppState.activeSidebarTab === 'layersOrNets') { if (AppState.activeViewMode === 'schematic' && DOM.panels.layersOrNets.schematic) DOM.panels.layersOrNets.schematic.classList.remove('hidden'); else if (AppState.activeViewMode === 'layout' && DOM.panels.layersOrNets.layout) DOM.panels.layersOrNets.layout.classList.remove('hidden'); else if (AppState.activeViewMode === '3d' && DOM.panels.threeOptions) DOM.panels.threeOptions.classList.remove('hidden'); } else if (AppState.activeSidebarTab === 'properties' && DOM.panels.properties) { DOM.panels.properties.classList.remove('hidden'); } }
+        function setCursorForView(toolOrView) { let cursorType = 'default'; let activeCanvas = DOM.layoutSvgCanvas; if (AppState.activeViewMode === 'schematic') { activeCanvas = DOM.schematicSvgCanvas; if (toolOrView === 'select') cursorType = 'grab'; else if (toolOrView === 'wire') cursorType = 'crosshair'; else cursorType = 'default'; } else if (AppState.activeViewMode === 'layout') { activeCanvas = DOM.layoutSvgCanvas; if (toolOrView === 'select') cursorType = 'grab'; else if (toolOrView === 'track') cursorType = 'crosshair'; else cursorType = 'default'; } else if (AppState.activeViewMode === '3d') { activeCanvas = DOM.threeCanvasContainer.querySelector('canvas') || DOM.threeCanvasContainer; } const cursors = ['grab-cursor', 'grabbing-cursor', 'crosshair-cursor', 'pointer-cursor', 'default-cursor']; [DOM.schematicSvgCanvas, DOM.layoutSvgCanvas, DOM.threeCanvasContainer.querySelector('canvas')].forEach(c => { if (c) cursors.forEach(cur => c.classList.remove(cur)); }); if (activeCanvas && cursorType) activeCanvas.classList.add(`${cursorType}-cursor`); else if (activeCanvas) activeCanvas.classList.add('default-cursor'); }
+        function handleSchematicToolChange(tool) { AppState.activeSchematicTool = tool; DOM.toolSchematicSelectBtn.classList.toggle('active', tool === 'select'); DOM.toolDrawWireBtn.classList.toggle('active', tool === 'wire'); AppState.isDrawingWire = false; AppState.currentWireStartPoint = null; DOM.tempWireLine.classList.add('hidden'); setCursorForView(tool); updateStatusBar(); }
+        function handleLayoutToolChange(tool) { AppState.activeLayoutTool = tool; DOM.toolLayoutSelectBtn.classList.toggle('active', tool === 'select'); DOM.toolDrawTrackBtn.classList.toggle('active', tool === 'track'); AppState.isDrawingTrack = false; AppState.currentTrackPoints = []; DOM.tempTrackLine.classList.add('hidden'); setCursorForView(tool); updateStatusBar(); }
+        function handleZoom(zoomFactorChange, clientX, clientY) { if (AppState.activeViewMode === '3d') return; let oldZoom, newZoom, pan, svgCanvas, groupElement; if (AppState.activeViewMode === 'schematic') { oldZoom = AppState.schematicZoomLevel; AppState.schematicZoomLevel = Math.max(0.1, Math.min(AppState.schematicZoomLevel * zoomFactorChange, 50)); newZoom = AppState.schematicZoomLevel; pan = AppState.schematicPan; svgCanvas = DOM.schematicSvgCanvas; groupElement = DOM.schematicElementsGroup; } else { oldZoom = AppState.layoutZoomLevel; AppState.layoutZoomLevel = Math.max(0.05, Math.min(AppState.layoutZoomLevel * zoomFactorChange, 150)); newZoom = AppState.layoutZoomLevel; pan = AppState.layoutPan; svgCanvas = DOM.layoutSvgCanvas; groupElement = DOM.layoutElementsGroup; } if (newZoom === oldZoom) return; const CTM_before = groupElement.getScreenCTM() || svgCanvas.getScreenCTM(); if (!CTM_before) return; const mouseSvgBefore = { x: (clientX - CTM_before.e) / CTM_before.a, y: (clientY - CTM_before.f) / CTM_before.d }; pan.x = clientX - mouseSvgBefore.x * newZoom; pan.y = clientY - mouseSvgBefore.y * newZoom; if (AppState.activeViewMode === 'schematic') renderSchematicSVG(); else renderLayoutSVG(); }
+        function handleZoomFit() {
+            if (AppState.activeViewMode === '3d') return;
+
+            let elements, appStatePanRef, appStateZoomRefKey, canvasView, renderFunc;
+            const maxZoomFitFactor = AppState.activeViewMode === 'schematic' ? 20 : 50;
+            const minZoomFitFactor = 0.1;
+
+            if (AppState.activeViewMode === 'schematic') {
+                elements = AppState.schematicElements;
+                appStatePanRef = AppState.schematicPan;
+                appStateZoomRefKey = 'schematicZoomLevel';
+                canvasView = DOM.schematicCanvasView;
+                renderFunc = renderSchematicSVG;
+            } else { // layout
+                elements = AppState.layoutElements;
+                appStatePanRef = AppState.layoutPan;
+                appStateZoomRefKey = 'layoutZoomLevel';
+                canvasView = DOM.layoutCanvasView;
+                renderFunc = renderLayoutSVG;
+            }
+
+            let calculatedZoom = 1; // Default zoom
+            let calculatedPanX = (canvasView.clientWidth / 2); // Default pan to center
+            let calculatedPanY = (canvasView.clientHeight / 2);
+
+            if (elements.length === 0) {
+                // No elements, use default zoom and slightly offset pan (original behavior was /3)
+                calculatedPanX = canvasView.clientWidth / 3;
+                calculatedPanY = canvasView.clientHeight / 3;
+            } else {
+                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                let validElementsFound = false;
+
+                elements.forEach(el => {
+                    let currentElMinX, currentElMinY, currentElMaxX, currentElMaxY;
+                    let hasValidCoords = false;
+
+                    const elX = typeof el.x === 'number' ? el.x : 0;
+                    const elY = typeof el.y === 'number' ? el.y : 0;
+
+                    if (el.type === 'symbol' || el.type === 'footprint' || el.type === 'pad') {
+                        const def = AppState.activeViewMode === 'schematic' ?
+                            AppState.schematicSymbolLibrary[el.symbolId] :
+                            AppState.footprintLibrary[el.componentId];
+
+                        const w = def ? (typeof def.width === 'number' ? def.width : 0) : (typeof el.width === 'number' ? el.width : 0);
+                        const h = def ? (typeof def.height === 'number' ? def.height : 0) : (typeof el.height === 'number' ? el.height : 0);
+
+                        currentElMinX = elX;
+                        currentElMinY = elY;
+                        currentElMaxX = elX + w;
+                        currentElMaxY = elY + h;
+                        hasValidCoords = true;
+
+                    } else if ((el.type === 'wire' && el.p1 && el.p2) || (el.type === 'track' && el.points && el.points.length > 0)) {
+                        const pointsToConsider = el.type === 'wire' ? [el.p1, el.p2] : el.points;
+
+                        if (pointsToConsider && pointsToConsider.length > 0) {
+                            // Initialize with the first valid point
+                            let firstValidPoint = pointsToConsider.find(p => typeof p.x === 'number' && typeof p.y === 'number');
+                            if (firstValidPoint) {
+                                currentElMinX = firstValidPoint.x;
+                                currentElMinY = firstValidPoint.y;
+                                currentElMaxX = firstValidPoint.x;
+                                currentElMaxY = firstValidPoint.y;
+                                hasValidCoords = true; // At least one point is valid
+
+                                pointsToConsider.forEach(p => {
+                                    if (typeof p.x === 'number' && typeof p.y === 'number') {
+                                        currentElMinX = Math.min(currentElMinX, p.x);
+                                        currentElMinY = Math.min(currentElMinY, p.y);
+                                        currentElMaxX = Math.max(currentElMaxX, p.x);
+                                        currentElMaxY = Math.max(currentElMaxY, p.y);
+                                    }
+                                });
+                            }
+                        }
+                    }
+
+                    if (hasValidCoords) {
+                        validElementsFound = true;
+                        minX = Math.min(minX, currentElMinX);
+                        minY = Math.min(minY, currentElMinY);
+                        maxX = Math.max(maxX, currentElMaxX);
+                        maxY = Math.max(maxY, currentElMaxY);
+                    }
+                });
+
+                if (validElementsFound && isFinite(minX) && isFinite(maxX) && isFinite(minY) && isFinite(maxY)) {
+                    const elementsWidth = maxX - minX;
+                    const elementsHeight = maxY - minY;
+                    const padding = 50; // Screen pixels padding
+
+                    if (elementsWidth > 0 && elementsHeight > 0) {
+                        const canvasEffectiveWidth = Math.max(1, canvasView.clientWidth - 2 * padding);
+                        const canvasEffectiveHeight = Math.max(1, canvasView.clientHeight - 2 * padding);
+
+                        const scaleX = canvasEffectiveWidth / elementsWidth;
+                        const scaleY = canvasEffectiveHeight / elementsHeight;
+
+                        calculatedZoom = Math.min(scaleX, scaleY, maxZoomFitFactor);
+                        calculatedZoom = Math.max(calculatedZoom, minZoomFitFactor);
+
+                        calculatedPanX = (canvasView.clientWidth / 2) - ((minX + elementsWidth / 2) * calculatedZoom);
+                        calculatedPanY = (canvasView.clientHeight / 2) - ((minY + elementsHeight / 2) * calculatedZoom);
+                    } else {
+                        // Elements have no significant width/height, use default zoom and center on the (single) point/area
+                        calculatedZoom = maxZoomFitFactor / 2; // A reasonable high zoom
+                        calculatedPanX = (canvasView.clientWidth / 2) - (minX * calculatedZoom);
+                        calculatedPanY = (canvasView.clientHeight / 2) - (minY * calculatedZoom);
+                    }
+                }
+                // If !validElementsFound or coordinates are not finite, defaults (1, center) remain
+            }
+
+            // Apply calculated zoom and pan
+            AppState[appStateZoomRefKey] = calculatedZoom;
+            appStatePanRef.x = calculatedPanX;
+            appStatePanRef.y = calculatedPanY;
+
+            renderFunc();
+        }
+
+        // --- Canvas Interaction (Common handler, routes to mode-specific logic) ---
+        function handleCanvasMouseDown(event) { if (AppState.activeViewMode === '3d') return; const activeCanvas = AppState.activeViewMode === 'schematic' ? DOM.schematicSvgCanvas : DOM.layoutSvgCanvas; activeCanvas.focus(); const groupElement = AppState.activeViewMode === 'schematic' ? DOM.schematicElementsGroup : DOM.layoutElementsGroup; const mousePosSVG = getMousePositionInSVG(event, activeCanvas, groupElement); AppState.lastMousePosSVG = mousePosSVG; const targetElementDom = event.target.closest('.svg-element, .schematic-symbol-pin'); const elementId = targetElementDom && targetElementDom.closest('.svg-element') ? targetElementDom.closest('.svg-element').dataset.elementId : null; const pinId = targetElementDom && targetElementDom.classList.contains('schematic-symbol-pin') ? targetElementDom.dataset.pinId : null; const onPin = !!(elementId && pinId); if (AppState.activeViewMode === 'schematic') { if (AppState.activeSchematicTool === 'select') { if (event.button === 1 || (event.button === 0 && (event.altKey || event.metaKey || event.ctrlKey))) { AppState.isPanning = true; AppState.panStart = { x: event.clientX - AppState.schematicPan.x, y: event.clientY - AppState.schematicPan.y }; activeCanvas.classList.add('grabbing-cursor'); activeCanvas.classList.remove('grab-cursor'); } else if (elementId && event.button === 0 && !onPin) { AppState.isDraggingElement = true; activeCanvas.classList.add('grabbing-cursor'); activeCanvas.classList.remove('pointer-cursor'); AppState.draggedElementInitialPositions.clear(); if (event.shiftKey) { if (AppState.selectedSchematicElementIds.includes(elementId)) AppState.selectedSchematicElementIds = AppState.selectedSchematicElementIds.filter(id => id !== elementId); else AppState.selectedSchematicElementIds.push(elementId); } else { if (!AppState.selectedSchematicElementIds.includes(elementId)) AppState.selectedSchematicElementIds = [elementId]; } AppState.selectedSchematicElementIds.forEach(id => { const el = AppState.schematicElements.find(e => e.id === id); if (el) AppState.draggedElementInitialPositions.set(id, { x: el.x, y: el.y, rotation: el.rotation }); }); renderSchematicSVG(); } else if (event.button === 0 && !onPin) { AppState.isSelectingArea = true; AppState.selectionRectStart = { clientX: event.clientX, clientY: event.clientY }; DOM.selectionRect.style.left = event.clientX + 'px'; DOM.selectionRect.style.top = event.clientY + 'px'; DOM.selectionRect.style.width = '0px'; DOM.selectionRect.style.height = '0px'; DOM.selectionRect.style.display = 'block'; if (!event.shiftKey) AppState.selectedSchematicElementIds = []; renderSchematicSVG(); } } else if (AppState.activeSchematicTool === 'wire' && event.button === 0) { const snappedMousePos = { x: snapToGrid(mousePosSVG.x, AppState.schematicGridSize / 4), y: snapToGrid(mousePosSVG.y, AppState.schematicGridSize / 4) }; let connectionPoint = snappedMousePos; if (onPin) { const symbolElement = AppState.schematicElements.find(s => s.id === elementId); const symbolDef = AppState.schematicSymbolLibrary[symbolElement.symbolId]; const pinDef = symbolDef.pins.find(p => p.id === pinId); const symbolCenterX = symbolDef.width / 2; const symbolCenterY = symbolDef.height / 2; const rotationRad = (symbolElement.rotation || 0) * Math.PI / 180; const cosR = Math.cos(rotationRad); const sinR = Math.sin(rotationRad); const relPinX = pinDef.x - symbolCenterX; const relPinY = pinDef.y - symbolCenterY; const rotatedPinX = relPinX * cosR - relPinY * sinR; const rotatedPinY = relPinX * sinR + relPinY * cosR; connectionPoint = { x: snapToGrid(symbolElement.x + symbolCenterX + rotatedPinX, AppState.schematicGridSize/4), y: snapToGrid(symbolElement.y + symbolCenterY + rotatedPinY, AppState.schematicGridSize/4) }; connectionPoint.elementId = elementId; connectionPoint.pinId = pinId; } if (!AppState.isDrawingWire) { AppState.isDrawingWire = true; AppState.currentWireStartPoint = connectionPoint; DOM.tempWireLine.setAttribute('x1', connectionPoint.x); DOM.tempWireLine.setAttribute('y1', connectionPoint.y); DOM.tempWireLine.setAttribute('x2', connectionPoint.x); DOM.tempWireLine.setAttribute('y2', connectionPoint.y); DOM.tempWireLine.classList.remove('hidden'); } else { const newWire = { id: generateId('w'), type: 'wire', p1: AppState.currentWireStartPoint, p2: connectionPoint, properties: {}, startPinData: AppState.currentWireStartPoint, endPinData: connectionPoint }; AppState.schematicElements.push(newWire); AppState.isDrawingWire = false; AppState.currentWireStartPoint = null; DOM.tempWireLine.classList.add('hidden'); renderSchematicSVG(); handleSchematicToolChange('select'); } } } else { if (AppState.activeLayoutTool === 'select') { if (event.button === 1 || (event.button === 0 && (event.altKey || event.metaKey || event.ctrlKey))) { AppState.isPanning = true; AppState.panStart = { x: event.clientX - AppState.layoutPan.x, y: event.clientY - AppState.layoutPan.y }; activeCanvas.classList.add('grabbing-cursor'); activeCanvas.classList.remove('grab-cursor'); } else if (elementId && event.button === 0) { AppState.isDraggingElement = true; activeCanvas.classList.add('grabbing-cursor'); activeCanvas.classList.remove('pointer-cursor'); AppState.draggedElementInitialPositions.clear(); if (event.shiftKey) { if (AppState.selectedLayoutElementIds.includes(elementId)) AppState.selectedLayoutElementIds = AppState.selectedLayoutElementIds.filter(id => id !== elementId); else AppState.selectedLayoutElementIds.push(elementId); } else { if (!AppState.selectedLayoutElementIds.includes(elementId)) AppState.selectedLayoutElementIds = [elementId]; } AppState.selectedLayoutElementIds.forEach(id => { const el = AppState.layoutElements.find(e => e.id === id); if (el) AppState.draggedElementInitialPositions.set(id, { x: el.x, y: el.y, rotation: el.rotation }); }); renderLayoutSVG(); } else if (event.button === 0) { AppState.isSelectingArea = true; AppState.selectionRectStart = { clientX: event.clientX, clientY: event.clientY }; DOM.selectionRect.style.left = event.clientX + 'px'; DOM.selectionRect.style.top = event.clientY + 'px'; DOM.selectionRect.style.width = '0px'; DOM.selectionRect.style.height = '0px'; DOM.selectionRect.style.display = 'block'; if (!event.shiftKey) AppState.selectedLayoutElementIds = []; renderLayoutSVG(); } } else if (AppState.activeLayoutTool === 'track' && event.button === 0) { const snappedMousePos = { x: snapToGrid(mousePosSVG.x, AppState.layoutGridSize / 4), y: snapToGrid(mousePosSVG.y, AppState.layoutGridSize / 4) }; if (!AppState.isDrawingTrack) { AppState.isDrawingTrack = true; AppState.currentTrackPoints = [snappedMousePos]; DOM.tempTrackLine.setAttribute('x1', snappedMousePos.x.toString()); DOM.tempTrackLine.setAttribute('y1', snappedMousePos.y.toString()); DOM.tempTrackLine.setAttribute('x2', snappedMousePos.x.toString()); DOM.tempTrackLine.setAttribute('y2', snappedMousePos.y.toString()); DOM.tempTrackLine.setAttribute('stroke', 'var(--calypso-accent-hover)'); DOM.tempTrackLine.setAttribute('stroke-width', (0.5 / AppState.layoutZoomLevel).toString()); DOM.tempTrackLine.classList.remove('hidden'); } else { AppState.currentTrackPoints.push(snappedMousePos); if (AppState.currentTrackPoints.length >= 2) { const newTrack = { id: generateId('trk'), type: 'track', points: [...AppState.currentTrackPoints], properties: { color: 'var(--calypso-red)', width: 0.5 } }; AppState.layoutElements.push(newTrack); AppState.currentTrackPoints = [snappedMousePos]; DOM.tempTrackLine.setAttribute('x1', snappedMousePos.x.toString()); DOM.tempTrackLine.setAttribute('y1', snappedMousePos.y.toString()); renderLayoutSVG(); } } } } if (event.button === 2) { if (AppState.activeViewMode === 'schematic' && AppState.isDrawingWire) { event.preventDefault(); AppState.isDrawingWire = false; AppState.currentWireStartPoint = null; DOM.tempWireLine.classList.add('hidden'); handleSchematicToolChange('select'); renderSchematicSVG(); } else if (AppState.activeViewMode === 'layout' && AppState.isDrawingTrack) { event.preventDefault(); AppState.isDrawingTrack = false; AppState.currentTrackPoints = []; DOM.tempTrackLine.classList.add('hidden'); handleLayoutToolChange('select'); renderLayoutSVG(); } } }
+        function handleCanvasMouseMove(event) { if (AppState.activeViewMode === '3d') return; const activeCanvas = AppState.activeViewMode === 'schematic' ? DOM.schematicSvgCanvas : DOM.layoutSvgCanvas; const groupElement = AppState.activeViewMode === 'schematic' ? DOM.schematicElementsGroup : DOM.layoutElementsGroup; const mousePosSVG = getMousePositionInSVG(event, activeCanvas, groupElement); DOM.statusCoords.textContent = `X: ${mousePosSVG.x.toFixed(3)}, Y: ${mousePosSVG.y.toFixed(3)}`; if (AppState.isPanning) { let pan = AppState.activeViewMode === 'schematic' ? AppState.schematicPan : AppState.layoutPan; pan.x = event.clientX - AppState.panStart.x; pan.y = event.clientY - AppState.panStart.y; if (AppState.activeViewMode === 'schematic') renderSchematicSVG(); else renderLayoutSVG(); } else if (AppState.isDraggingElement) { const dxSVG = mousePosSVG.x - AppState.lastMousePosSVG.x; const dySVG = mousePosSVG.y - AppState.lastMousePosSVG.y; let selectedIds, elements, gridSize; if (AppState.activeViewMode === 'schematic') { selectedIds = AppState.selectedSchematicElementIds; elements = AppState.schematicElements; gridSize = AppState.schematicGridSize / 4; } else { selectedIds = AppState.selectedLayoutElementIds; elements = AppState.layoutElements; gridSize = AppState.layoutGridSize / 4; } selectedIds.forEach(id => { const el = elements.find(e => e.id === id); if (el && (el.type === 'symbol' || el.type === 'footprint')) { el.x = snapToGrid(el.x + dxSVG, gridSize); el.y = snapToGrid(el.y + dySVG, gridSize); } }); AppState.lastMousePosSVG = mousePosSVG; if (AppState.activeViewMode === 'schematic') renderSchematicSVG(); else renderLayoutSVG(); } else if (AppState.isSelectingArea) { const currentX = event.clientX; const currentY = event.clientY; const rX = Math.min(currentX, AppState.selectionRectStart.clientX); const rY = Math.min(currentY, AppState.selectionRectStart.clientY); const rWidth = Math.abs(currentX - AppState.selectionRectStart.clientX); const rHeight = Math.abs(currentY - AppState.selectionRectStart.clientY); DOM.selectionRect.style.left = rX + 'px'; DOM.selectionRect.style.top = rY + 'px'; DOM.selectionRect.style.width = rWidth + 'px'; DOM.selectionRect.style.height = rHeight + 'px'; } else if (AppState.activeViewMode === 'schematic' && AppState.isDrawingWire) { const snappedMousePos = { x: snapToGrid(mousePosSVG.x, AppState.schematicGridSize / 4), y: snapToGrid(mousePosSVG.y, AppState.schematicGridSize / 4) }; DOM.tempWireLine.setAttribute('x2', snappedMousePos.x); DOM.tempWireLine.setAttribute('y2', snappedMousePos.y); const tempStrokeWidth = Math.max(0.5, 1 / AppState.schematicZoomLevel); DOM.tempWireLine.setAttribute('stroke-width', tempStrokeWidth.toString()); } else if (AppState.activeViewMode === 'layout' && AppState.isDrawingTrack) { const snappedMousePos = { x: snapToGrid(mousePosSVG.x, AppState.layoutGridSize / 4), y: snapToGrid(mousePosSVG.y, AppState.layoutGridSize / 4) }; DOM.tempTrackLine.setAttribute('x2', snappedMousePos.x); DOM.tempTrackLine.setAttribute('y2', snappedMousePos.y); const tempStrokeWidth = Math.max(0.5, 1 / AppState.layoutZoomLevel); DOM.tempTrackLine.setAttribute('stroke-width', tempStrokeWidth.toString()); } else { const targetElementDom = event.target.closest('.svg-element, .schematic-symbol-pin'); let currentTool = AppState.activeViewMode === 'schematic' ? AppState.activeSchematicTool : AppState.activeLayoutTool; if (targetElementDom && targetElementDom.classList.contains('schematic-symbol-pin') && currentTool === 'wire') { activeCanvas.classList.remove('crosshair-cursor'); activeCanvas.classList.add('pointer-cursor'); } else if (targetElementDom && currentTool === 'select') { activeCanvas.classList.remove('grab-cursor'); activeCanvas.classList.add('pointer-cursor'); } else if (currentTool === 'select') { activeCanvas.classList.remove('pointer-cursor'); activeCanvas.classList.add('grab-cursor'); } else if (currentTool === 'wire' || currentTool === 'track') { activeCanvas.classList.remove('pointer-cursor'); activeCanvas.classList.add('crosshair-cursor'); } } }
+        function handleCanvasMouseUp(event) { if (AppState.activeViewMode === '3d') return; const activeCanvas = AppState.activeViewMode === 'schematic' ? DOM.schematicSvgCanvas : DOM.layoutSvgCanvas; if (AppState.isPanning) { AppState.isPanning = false; activeCanvas.classList.remove('grabbing-cursor'); activeCanvas.classList.add( (AppState.activeViewMode === 'schematic' && AppState.activeSchematicTool === 'select') || (AppState.activeViewMode === 'layout' && AppState.activeLayoutTool === 'select') ? 'grab-cursor' : 'crosshair-cursor'); } if (AppState.isDraggingElement) { AppState.isDraggingElement = false; AppState.draggedElementInitialPositions.clear(); activeCanvas.classList.remove('grabbing-cursor'); activeCanvas.classList.add( (AppState.activeViewMode === 'schematic' && AppState.activeSchematicTool === 'select') || (AppState.activeViewMode === 'layout' && AppState.activeLayoutTool === 'select') ? 'grab-cursor' : 'pointer-cursor'); updatePropertiesPanel(); } if (AppState.isSelectingArea) { AppState.isSelectingArea = false; DOM.selectionRect.style.display = 'none'; const groupElement = AppState.activeViewMode === 'schematic' ? DOM.schematicElementsGroup : DOM.layoutElementsGroup; const CTM = groupElement.getScreenCTM(); if (!CTM) return; const CTM_inv = CTM.inverse(); const r = DOM.selectionRect.getBoundingClientRect(); const svgP1 = activeCanvas.createSVGPoint(); svgP1.x = r.left; svgP1.y = r.top; const svgP2 = activeCanvas.createSVGPoint(); svgP2.x = r.right; svgP2.y = r.bottom; const svgCoordP1 = svgP1.matrixTransform(CTM_inv); const svgCoordP2 = svgP2.matrixTransform(CTM_inv); const selectionBoxSVG = { minX: Math.min(svgCoordP1.x, svgCoordP2.x), minY: Math.min(svgCoordP1.y, svgCoordP2.y), maxX: Math.max(svgCoordP1.x, svgCoordP2.x), maxY: Math.max(svgCoordP1.y, svgCoordP2.y), }; const newlySelectedIds = []; const elements = AppState.activeViewMode === 'schematic' ? AppState.schematicElements : AppState.layoutElements; elements.forEach(el => { let intersects = false; if (el.type === 'symbol' || el.type === 'footprint' || el.type === 'pad') { const def = AppState.activeViewMode === 'schematic' ? AppState.schematicSymbolLibrary[el.symbolId] : AppState.footprintLibrary[el.componentId]; const w = def ? def.width : (el.width || 0); const h = def ? def.height : (el.height || 0); const elBox = { minX: el.x, minY: el.y, maxX: el.x + w, maxY: el.y + h }; if (elBox.maxX >= selectionBoxSVG.minX && elBox.minX <= selectionBoxSVG.maxX && elBox.maxY >= selectionBoxSVG.minY && elBox.minY <= selectionBoxSVG.maxY) intersects = true; } else if (el.type === 'wire' || el.type === 'track') { const pointsToCheck = el.type === 'wire' ? [el.p1, el.p2] : el.points; if (pointsToCheck && pointsToCheck.some(p => p.x >= selectionBoxSVG.minX && p.x <= selectionBoxSVG.maxX && p.y >= selectionBoxSVG.minY && p.y <= selectionBoxSVG.maxY)) intersects = true; } if (intersects) newlySelectedIds.push(el.id); }); let currentSelectedIds = AppState.activeViewMode === 'schematic' ? AppState.selectedSchematicElementIds : AppState.selectedLayoutElementIds; if (event.shiftKey) newlySelectedIds.forEach(id => { if (!currentSelectedIds.includes(id)) currentSelectedIds.push(id); }); else currentSelectedIds = newlySelectedIds; if (AppState.activeViewMode === 'schematic') { AppState.selectedSchematicElementIds = currentSelectedIds; renderSchematicSVG(); } else { AppState.selectedLayoutElementIds = currentSelectedIds; renderLayoutSVG(); } } }
+        function handleCanvasMouseLeave(event) { /* ... */ }
+        function handleCanvasWheel(event) { if (AppState.activeViewMode === '3d') return; event.preventDefault(); const zoomFactor = event.deltaY < 0 ? 1.15 : 1 / 1.15; handleZoom(zoomFactor, event.clientX, event.clientY); }
+        function handleDocumentKeyDown(event) { if (document.activeElement && ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) { if (event.key === 'Escape') document.activeElement.blur(); return; } let currentElements, currentSelectedIds, renderFunc, toolChangeFunc; if (AppState.activeViewMode === 'schematic') { currentElements = AppState.schematicElements; currentSelectedIds = AppState.selectedSchematicElementIds; renderFunc = renderSchematicSVG; toolChangeFunc = handleSchematicToolChange; } else if (AppState.activeViewMode === 'layout') { currentElements = AppState.layoutElements; currentSelectedIds = AppState.selectedLayoutElementIds; renderFunc = renderLayoutSVG; toolChangeFunc = handleLayoutToolChange; } else { if (event.key === '3') DOM.mode3DBtn.click(); return; } switch (event.key) { case 'Escape': if (AppState.activeViewMode === 'schematic' && AppState.isDrawingWire) { AppState.isDrawingWire = false; AppState.currentWireStartPoint = null; DOM.tempWireLine.classList.add('hidden'); renderFunc(); } else if (AppState.activeViewMode === 'layout' && AppState.isDrawingTrack) { AppState.isDrawingTrack = false; AppState.currentTrackPoints = []; DOM.tempTrackLine.classList.add('hidden'); renderFunc(); } else if (currentSelectedIds.length > 0) { if (AppState.activeViewMode === 'schematic') AppState.selectedSchematicElementIds = []; else AppState.selectedLayoutElementIds = []; renderFunc(); } break; case 'Delete': case 'Backspace': if (currentSelectedIds.length > 0) { if (AppState.activeViewMode === 'layout' && threeModulesLoaded) currentSelectedIds.forEach(id => removeElementFromThreeScene(id)); const newElements = currentElements.filter(el => !currentSelectedIds.includes(el.id)); if (AppState.activeViewMode === 'schematic') { AppState.schematicElements = newElements; AppState.selectedSchematicElementIds = []; } else { AppState.layoutElements = newElements; AppState.selectedLayoutElementIds = []; } renderFunc(); } break; case 'v': case 'V': toolChangeFunc('select'); break; case 't': case 'T': if(AppState.activeViewMode === 'layout') toolChangeFunc('track'); break; case 'w': case 'W': if(AppState.activeViewMode === 'schematic') toolChangeFunc('wire'); break; case '+': case '=': handleZoom(1.2, (AppState.activeViewMode === 'schematic' ? DOM.schematicCanvasView : DOM.layoutCanvasView).clientWidth / 2, (AppState.activeViewMode === 'schematic' ? DOM.schematicCanvasView : DOM.layoutCanvasView).clientHeight / 2); break; case '-': case '_': handleZoom(1/1.2, (AppState.activeViewMode === 'schematic' ? DOM.schematicCanvasView : DOM.layoutCanvasView).clientWidth / 2, (AppState.activeViewMode === 'schematic' ? DOM.schematicCanvasView : DOM.layoutCanvasView).clientHeight / 2); break; case 'f': case 'F': handleZoomFit(); break; case '3': DOM.mode3DBtn.click(); break; case 'r': case 'R': if (currentSelectedIds.length > 0) { const rotationAmount = event.shiftKey ? -90 : 90; currentSelectedIds.forEach(id => { const el = currentElements.find(e => e.id === id); if (el && (el.type === 'symbol' || el.type === 'footprint' || el.type === 'pad')) el.rotation = ((el.rotation || 0) + rotationAmount + 360) % 360; }); renderFunc(); } break; } }
+
+        // --- Drag and Drop ---
+        function handleLibraryItemDragStart(event) { const item = event.target.closest('.library-item'); if (!item) { event.preventDefault(); return; } if (item.dataset.symbolType) { event.dataTransfer.setData('text/plain', item.dataset.symbolType); event.dataTransfer.setData('text/type', 'symbol'); } else if (item.dataset.footprintType) { event.dataTransfer.setData('text/plain', item.dataset.footprintType); event.dataTransfer.setData('text/type', 'footprint'); } else { event.preventDefault(); return; } event.dataTransfer.effectAllowed = 'copy'; }
+        function handleCanvasDragOver(event) { if (AppState.activeViewMode === '3d') return; event.preventDefault(); event.dataTransfer.dropEffect = 'copy'; }
+        function handleCanvasDrop(event) { if (AppState.activeViewMode === '3d') return; event.preventDefault(); const itemTypeStr = event.dataTransfer.getData('text/plain'); const itemClass = event.dataTransfer.getData('text/type'); let activeCanvas, groupElement, mousePosSVG, snapSize, elementsArray, renderFunc, idPrefix; if (AppState.activeViewMode === 'schematic' && itemClass === 'symbol') { const symbolDef = AppState.schematicSymbolLibrary[itemTypeStr]; if (!symbolDef) return; activeCanvas = DOM.schematicSvgCanvas; groupElement = DOM.schematicElementsGroup; mousePosSVG = getMousePositionInSVG(event, activeCanvas, groupElement); snapSize = AppState.schematicGridSize / 2; elementsArray = AppState.schematicElements; renderFunc = renderSchematicSVG; idPrefix = 'sch'; let refDes = symbolDef.prefix + '?'; if (symbolDef.prefix) { let count = 1; elementsArray.forEach(el => { if (el.type === 'symbol' && el.properties && el.properties.ref && el.properties.ref.startsWith(symbolDef.prefix)) { const numPart = parseInt(el.properties.ref.substring(symbolDef.prefix.length), 10); if (!isNaN(numPart) && numPart >= count) count = numPart + 1; } }); refDes = `${symbolDef.prefix}${count}`; } const newElement = { id: generateId(idPrefix), type: 'symbol', symbolId: itemTypeStr, x: snapToGrid(mousePosSVG.x - (symbolDef.width / 2), snapSize), y: snapToGrid(mousePosSVG.y - (symbolDef.height / 2), snapSize), rotation: 0, properties: { ...JSON.parse(JSON.stringify(symbolDef.properties)), ref: refDes }, pinConnections: {} }; elementsArray.push(newElement); AppState.selectedSchematicElementIds = [newElement.id]; renderFunc(); } else if (AppState.activeViewMode === 'layout' && itemClass === 'footprint') { const footprintDef = AppState.footprintLibrary[itemTypeStr]; if (!footprintDef) return; activeCanvas = DOM.layoutSvgCanvas; groupElement = DOM.layoutElementsGroup; mousePosSVG = getMousePositionInSVG(event, activeCanvas, groupElement); snapSize = AppState.layoutGridSize / 4; elementsArray = AppState.layoutElements; renderFunc = renderLayoutSVG; idPrefix = 'fp'; let refDes = footprintDef.properties.ref || 'FP?'; if (refDes.endsWith('?')) { const prefix = refDes.slice(0, -1); let count = 1; elementsArray.forEach(el => { if (el.type === 'footprint' && el.properties && el.properties.ref && el.properties.ref.startsWith(prefix)) { const numPart = parseInt(el.properties.ref.substring(prefix.length), 10); if (!isNaN(numPart) && numPart >= count) count = numPart + 1; } }); refDes = `${prefix}${count}`; } const newElement = { id: generateId(idPrefix), type: 'footprint', componentId: itemTypeStr, x: snapToGrid(mousePosSVG.x - (footprintDef.width / 2), snapSize), y: snapToGrid(mousePosSVG.y - (footprintDef.height / 2), snapSize), width: footprintDef.width, height: footprintDef.height, rotation: 0, svgString: footprintDef.svg, properties: { ...JSON.parse(JSON.stringify(footprintDef.properties)), ref: refDes }, schematicRefId: null }; elementsArray.push(newElement); AppState.selectedLayoutElementIds = [newElement.id]; renderFunc(); } }
+
+        // --- Schematic to Layout Synchronization ---
+        function updateLayoutFromSchematic() { if (AppState.schematicElements.filter(el => el.type === 'symbol').length === 0) { alert("No hay símbolos en el esquemático."); return; } console.log("Actualizando PCB desde Esquemático..."); let newFootprintsPlaced = 0; AppState.schematicElements.forEach(schEl => { if (schEl.type === 'symbol') { const existingFootprint = AppState.layoutElements.find(fp => fp.schematicRefId === schEl.id); if (existingFootprint) { console.log(`Huella para ${schEl.properties.ref} ya existe.`); if (existingFootprint.properties.ref !== schEl.properties.ref) existingFootprint.properties.ref = schEl.properties.ref; } else { const symbolDef = AppState.schematicSymbolLibrary[schEl.symbolId]; const footprintName = symbolDef.defaultFootprint; if (footprintName && AppState.footprintLibrary[footprintName]) { const footprintDef = AppState.footprintLibrary[footprintName]; const newFootprint = { id: generateId('fp'), type: 'footprint', componentId: footprintName, x: snapToGrid(50 + newFootprintsPlaced * (footprintDef.width + 10), AppState.layoutGridSize), y: snapToGrid(50, AppState.layoutGridSize), width: footprintDef.width, height: footprintDef.height, rotation: 0, svgString: footprintDef.svg, properties: { ...JSON.parse(JSON.stringify(footprintDef.properties)), ref: schEl.properties.ref }, schematicRefId: schEl.id }; AppState.layoutElements.push(newFootprint); newFootprintsPlaced++; console.log(`Huella ${newFootprint.properties.ref} colocada.`); } else console.warn(`No se encontró huella por defecto '${footprintName}' para ${schEl.properties.ref}`); } } }); if (newFootprintsPlaced > 0) alert(`${newFootprintsPlaced} nuevas huellas añadidas.`); else alert("No se añadieron nuevas huellas."); handleViewModeChange('layout'); }
+
+        // --- EXAMPLE LOADER ---
+        function handleLoadExampleAction() { console.log("Cargando circuito de ejemplo..."); endTutorial(); disposeThreeScene(); AppState.schematicElements = []; AppState.selectedSchematicElementIds = []; AppState.nets = {}; AppState.nextNetId = 0; AppState.nextSchematicElementId = 0; AppState.layoutElements = []; AppState.selectedLayoutElementIds = []; AppState.nextLayoutElementId = 0; AppState.schematicPan = { x: 0, y: 0 }; AppState.schematicZoomLevel = 1; AppState.layoutPan = { x: 0, y: 0 }; AppState.layoutZoomLevel = 1; const exampleSchematicSymbols = []; const exampleSchematicWires = []; const mcuSch = { id: generateId('ex_sch'), type: 'symbol', symbolId: 'MCU_TQFP32', x: 150, y: 100, rotation: 0, properties: { ref: 'U1', value: 'ATmega328P' }, pinConnections: {} }; exampleSchematicSymbols.push(mcuSch); const ispSch = { id: generateId('ex_sch'), type: 'symbol', symbolId: 'CONN_HEADER_2X03_THT', x: 300, y: 50, rotation: 0, properties: { ref: 'J1', value: 'ISP' }, pinConnections: {} }; exampleSchematicSymbols.push(ispSch); const ledSch = { id: generateId('ex_sch'), type: 'symbol', symbolId: 'LED', x: 50, y: 180, rotation: 0, properties: { ref: 'D1', value: 'LED_Red', color: 'Red' }, pinConnections: {} }; exampleSchematicSymbols.push(ledSch); const resSch = { id: generateId('ex_sch'), type: 'symbol', symbolId: 'RES', x: 50, y: 100, rotation: 0, properties: { ref: 'R1', value: '220Ω' }, pinConnections: {} }; exampleSchematicSymbols.push(resSch); const vccSch = { id: generateId('ex_sch'), type: 'symbol', symbolId: 'VCC', x: 20, y: 20, rotation: 0, properties: { ref: 'P1', value: '+5V' }, pinConnections: {} }; exampleSchematicSymbols.push(vccSch); const gndSch = { id: generateId('ex_sch'), type: 'symbol', symbolId: 'GND', x: 20, y: 250, rotation: 0, properties: { ref: 'P2', value: 'GND' }, pinConnections: {} }; exampleSchematicSymbols.push(gndSch); AppState.schematicElements.push(...exampleSchematicSymbols); let p_vcc_mcu = getSchematicPinAbsPos(mcuSch.id, '4'); let p_vcc_src = getSchematicPinAbsPos(vccSch.id, '1'); if (p_vcc_mcu && p_vcc_src) exampleSchematicWires.push({ id: generateId('ex_w'), type: 'wire', p1: p_vcc_src, p2: p_vcc_mcu, properties: {}, startPinData: p_vcc_src, endPinData: p_vcc_mcu }); let p_gnd_mcu = getSchematicPinAbsPos(mcuSch.id, '5'); let p_gnd_src = getSchematicPinAbsPos(gndSch.id, '1'); if (p_gnd_mcu && p_gnd_src) exampleSchematicWires.push({ id: generateId('ex_w'), type: 'wire', p1: p_gnd_src, p2: p_gnd_mcu, properties: {}, startPinData: p_gnd_src, endPinData: p_gnd_mcu }); let p_mcu_led_ctrl = getSchematicPinAbsPos(mcuSch.id, '1'); let p_res_in = getSchematicPinAbsPos(resSch.id, '1'); if (p_mcu_led_ctrl && p_res_in) exampleSchematicWires.push({ id: generateId('ex_w'), type: 'wire', p1: p_mcu_led_ctrl, p2: p_res_in, properties: {}, startPinData: p_mcu_led_ctrl, endPinData: p_res_in }); let p_res_out = getSchematicPinAbsPos(resSch.id, '2'); let p_led_anode = getSchematicPinAbsPos(ledSch.id, 'A'); if (p_res_out && p_led_anode) exampleSchematicWires.push({ id: generateId('ex_w'), type: 'wire', p1: p_res_out, p2: p_led_anode, properties: {}, startPinData: p_res_out, endPinData: p_led_anode }); let p_led_kathode = getSchematicPinAbsPos(ledSch.id, 'K'); if (p_led_kathode && p_gnd_src) exampleSchematicWires.push({ id: generateId('ex_w'), type: 'wire', p1: p_led_kathode, p2: { ...p_gnd_src, x: p_led_kathode.x, y: p_gnd_src.y }, properties: {}, startPinData: p_led_kathode, endPinData: p_gnd_src }); const ispConnections = [ { mcuPin: '16', ispPin: '1' }, { mcuPin: null, ispPin: '2', pwrSrc: p_vcc_src }, { mcuPin: '17', ispPin: '3' }, { mcuPin: '15', ispPin: '4' }, { mcuPin: '29', ispPin: '5' }, { mcuPin: null, ispPin: '6', pwrSrc: p_gnd_src } ]; ispConnections.forEach(conn => { let p_mcu = conn.mcuPin ? getSchematicPinAbsPos(mcuSch.id, conn.mcuPin) : conn.pwrSrc; let p_isp = getSchematicPinAbsPos(ispSch.id, conn.ispPin); if (p_mcu && p_isp) exampleSchematicWires.push({ id: generateId('ex_w'), type: 'wire', p1: p_mcu, p2: p_isp, properties: {}, startPinData: p_mcu, endPinData: p_isp }); }); AppState.schematicElements.push(...exampleSchematicWires); const exampleLayoutFootprints = []; const exampleLayoutTracks = []; const mcuFpDef = AppState.footprintLibrary['MCU_ATMEGA328_SMT']; const mcuFp = { id: generateId('ex_fp'), type: 'footprint', componentId: 'MCU_ATMEGA328_SMT', x: 25, y: 20, rotation: 0, width: mcuFpDef.width, height: mcuFpDef.height, svgString: mcuFpDef.svg, properties: { ...mcuFpDef.properties, ref: 'U1' }, schematicRefId: mcuSch.id }; exampleLayoutFootprints.push(mcuFp); const ispFpDef = AppState.footprintLibrary['CONN_HEADER_2X03_THT_FOOTPRINT']; const ispFp = { id: generateId('ex_fp'), type: 'footprint', componentId: 'CONN_HEADER_2X03_THT_FOOTPRINT', x: 5, y: 5, rotation: 0, width: ispFpDef.width, height: ispFpDef.height, svgString: ispFpDef.svg, properties: { ...ispFpDef.properties, ref: 'J1' }, schematicRefId: ispSch.id }; exampleLayoutFootprints.push(ispFp); const ledFpDef = AppState.footprintLibrary['LED_SMT0805']; const ledFp = { id: generateId('ex_fp'), type: 'footprint', componentId: 'LED_SMT0805', x: 30, y: 5, rotation: 0, width: ledFpDef.width, height: ledFpDef.height, svgString: ledFpDef.svg, properties: { ...ledFpDef.properties, ref: 'D1', color: 'Red' }, schematicRefId: ledSch.id }; exampleLayoutFootprints.push(ledFp); const resFpDef = AppState.footprintLibrary['RESISTOR_SMT0805']; const resFp = { id: generateId('ex_fp'), type: 'footprint', componentId: 'RESISTOR_SMT0805', x: 25, y: 5, rotation: 0, width: resFpDef.width, height: resFpDef.height, svgString: resFpDef.svg, properties: { ...resFpDef.properties, ref: 'R1' }, schematicRefId: resSch.id }; exampleLayoutFootprints.push(resFp); exampleLayoutTracks.push({ id: generateId('ex_trk'), type: 'track', points: [{x: 25 + 0.5, y: 20 + 1.5}, {x: 25 + 0.5, y: 5 + 1.25/2}], properties: { color: 'var(--calypso-red)', width: 0.3 } }); exampleLayoutTracks.push({ id: generateId('ex_trk'), type: 'track', points: [{x: 25 + 2.0 - 0.4, y: 5 + 1.25/2}, {x: 30 + 0.4, y: 5 + 1.25/2}], properties: { color: 'var(--calypso-red)', width: 0.3 } }); exampleLayoutTracks.push({ id: generateId('ex_trk'), type: 'track', points: [{x: 30 + 2.0 - 0.4, y: 5 + 1.25/2}, {x: 30 + 2.0 - 0.4, y: 2}, {x: 5 + (2.54*1.5), y: 2}, {x: 5 + (2.54*1.5), y: 5 + (2.54*2.5)} ], properties: { color: 'var(--calypso-green)', width: 0.5 } }); exampleLayoutTracks.push({ id: generateId('ex_trk'), type: 'track', points: [{x:25.5, y:23.9}, {x:15, y:23.9}, {x:15, y:7.54}, {x:5+2.54+1.27, y:7.54}], properties: { color: 'var(--calypso-red)', width: 0.5 } }); exampleLayoutTracks.push({ id: generateId('ex_trk'), type: 'track', points: [{x:25.5, y:24.7}, {x:13, y:24.7}, {x:13, y:11.35}, {x:5+2.54+1.27, y:11.35}], properties: { color: 'var(--calypso-green)', width: 0.5 } }); exampleLayoutTracks.push({ id: generateId('ex_trk'), type: 'track', points: [{x:29.7, y:20.5}, {x:29.7, y:15}, {x:5+1.27, y:15}, {x:5+1.27, y:11.35}], properties: { color: 'var(--calypso-red)', width: 0.3 } }); exampleLayoutTracks.push({ id: generateId('ex_trk'), type: 'track', points: [{x:31.3, y:28.5}, {x:18,y:28.5}, {x:18, y:8.81},{x:5+2.54+1.27, y:8.81}], properties: { color: 'var(--calypso-red)', width: 0.3 } }); exampleLayoutTracks.push({ id: generateId('ex_trk'), type: 'track', points: [{x:31.9, y:28.5}, {x:20,y:28.5},{x:20,y:6.27},{x:5+1.27, y:6.27}], properties: { color: 'var(--calypso-red)', width: 0.3 } }); exampleLayoutTracks.push({ id: generateId('ex_trk'), type: 'track', points: [{x:33.5, y:27.1}, {x:33.5, y:17},{x:5+1.27,y:17}, {x:5+1.27, y:8.81}], properties: { color: 'var(--calypso-red)', width: 0.3 } }); AppState.layoutElements.push(...exampleLayoutFootprints, ...exampleLayoutTracks); console.log("Ejemplo cargado. Cambiando a vista 3D."); handleViewModeChange('layout'); handleZoomFit(); }
+
+        // --- 3D Mode ---
+        async function loadThreeJSModules() { if (threeModulesLoaded) return Promise.resolve(); try { const threeModule = await import('three'); THREE = threeModule; const { OrbitControls: OrbitControlsModule } = await import('three/addons/controls/OrbitControls.js'); OrbitControls = OrbitControlsModule; threeModulesLoaded = true; console.log("Three.js modules loaded."); } catch (err) { console.error("Failed to load Three.js modules:", err); alert("Error al cargar módulos 3D."); DOM.mode3DBtn.disabled = true; DOM.mode3DBtn.textContent = "3D (Error)"; return Promise.reject(err); } return Promise.resolve(); }
+        function initThreeJS() { if (!THREE || !OrbitControls) { console.error("Three.js or OrbitControls not available."); return; } if (threeRenderer) { onThreeWindowResize(); return; } threeScene = new THREE.Scene(); threeScene.background = new THREE.Color(0x080c16); const canvasContainer = DOM.canvasViewsContainer; const aspect = canvasContainer.clientWidth / canvasContainer.clientHeight; threeCamera = new THREE.PerspectiveCamera(50, aspect, 0.1, 10000); threeCamera.position.set(0, 150, 200); threeRenderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" }); threeRenderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight); threeRenderer.setPixelRatio(window.devicePixelRatio); DOM.threeCanvasContainer.appendChild(threeRenderer.domElement); threeRenderer.domElement.id = "three-canvas"; const ambientLight = new THREE.AmbientLight(0xcccccc, 1.2); threeScene.add(ambientLight); const directionalLight1 = new THREE.DirectionalLight(0xffffff, 1.0); directionalLight1.position.set(1, 1.5, 1).normalize(); threeScene.add(directionalLight1); const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.7); directionalLight2.position.set(-1, 1, -0.8).normalize(); threeScene.add(directionalLight2); threeControls = new OrbitControls(threeCamera, threeRenderer.domElement); threeControls.enableDamping = true; threeControls.dampingFactor = 0.05; threeControls.screenSpacePanning = true; threeControls.minDistance = 5; threeControls.maxDistance = 2000; threeControls.target.set(0, 0, 0); window.addEventListener('resize', onThreeWindowResize, false); }
+        function onThreeWindowResize() { if (AppState.activeViewMode !== '3d' || !threeCamera || !threeRenderer) return; const canvasContainer = DOM.canvasViewsContainer; threeCamera.aspect = canvasContainer.clientWidth / canvasContainer.clientHeight; threeCamera.updateProjectionMatrix(); threeRenderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight); }
+        function disposeThreeObject(object) { if (!object) return; if (object.children && object.children.length > 0) { for (let i = object.children.length - 1; i >= 0; i--) { disposeThreeObject(object.children[i]); } } if (object.geometry) object.geometry.dispose(); if (object.material) { if (Array.isArray(object.material)) { object.material.forEach(m => { if (m.map) m.map.dispose(); m.dispose(); }); } else { if (object.material.map) object.material.map.dispose(); object.material.dispose(); } } if (object.parent) object.parent.remove(object); }
+        function removeElementFromThreeScene(elementId) { if (threeElementsMap.has(elementId)) { const threeObj = threeElementsMap.get(elementId); disposeThreeObject(threeObj); threeElementsMap.delete(elementId); } }
+        function disposeThreeScene() { if (animateThreeJS.animationFrameId) { cancelAnimationFrame(animateThreeJS.animationFrameId); animateThreeJS.animationFrameId = null; } if (threeRenderer) { threeElementsMap.forEach((obj, id) => { disposeThreeObject(obj); }); threeElementsMap.clear(); if (pcbMesh) { disposeThreeObject(pcbMesh); pcbMesh = null; } if (threeScene) { for (let i = threeScene.children.length - 1; i >= 0; i--) { const child = threeScene.children[i]; if (!(child instanceof THREE.Camera || child instanceof THREE.Light)) { disposeThreeObject(child); } } } threeRenderer.dispose(); if (DOM.threeCanvasContainer.firstChild) { DOM.threeCanvasContainer.removeChild(DOM.threeCanvasContainer.firstChild); } if (threeControls) { threeControls.dispose(); threeControls = null; } threeRenderer = null; window.removeEventListener('resize', onThreeWindowResize, false); } }
+
+        function updateThreeScene() {
+            // 0. Guard clauses and initial setup
+            if (!threeScene || !THREE || AppState.activeViewMode !== '3d' || !threeModulesLoaded) {
+                return;
+            }
+
+            // 1. Define materials (updated in case colors changed via UI)
+            const pcbMaterial = new THREE.MeshStandardMaterial({
+                color: AppState.threeColors.pcb,
+                roughness: 0.6,
+                metalness: 0.2,
+                side: THREE.DoubleSide
+            });
+            const componentBodyMaterial = new THREE.MeshStandardMaterial({
+                color: AppState.threeColors.componentBody,
+                roughness: 0.7,
+                metalness: 0.1
+            });
+            const smdPadMaterial = new THREE.MeshStandardMaterial({
+                color: AppState.threeColors.smdPad,
+                metalness: 0.9,
+                roughness: 0.2
+            });
+            const trackMaterial = new THREE.MeshStandardMaterial({
+                color: AppState.threeColors.track,
+                metalness: 0.9,
+                roughness: 0.4
+            });
+            const ledONMaterial = (colorHex = 0xff0000) => new THREE.MeshStandardMaterial({
+                color: colorHex,
+                emissive: colorHex,
+                emissiveIntensity: 1,
+                roughness: 0.5,
+                transparent: true,
+                opacity: 0.8
+            });
+
+            // 2. Calculate PCB dimensions and center
+            let pcbMinX = 0, pcbMinY = 0, pcbMaxX = 100, pcbMaxY = 80; // Defaults if no elements
+            const padding = 10;
+
+            if (AppState.layoutElements.length > 0) {
+                pcbMinX = Infinity; pcbMinY = Infinity;
+                pcbMaxX = -Infinity; pcbMaxY = -Infinity;
+                AppState.layoutElements.forEach(el => {
+                    const elX = el.x || 0;
+                    const elY = el.y || 0;
+                    if (el.type === 'track' && el.points && el.points.length > 0) {
+                        el.points.forEach(p => {
+                            pcbMinX = Math.min(pcbMinX, p.x); pcbMinY = Math.min(pcbMinY, p.y);
+                            pcbMaxX = Math.max(pcbMaxX, p.x); pcbMaxY = Math.max(pcbMaxY, p.y);
+                        });
+                    } else { // Footprints, Pads
+                        const elWidth = el.width || 0;
+                        const elHeight = el.height || 0;
+                        pcbMinX = Math.min(pcbMinX, elX); pcbMinY = Math.min(pcbMinY, elY);
+                        pcbMaxX = Math.max(pcbMaxX, elX + elWidth); pcbMaxY = Math.max(pcbMaxY, elY + elHeight);
+                    }
+                });
+                pcbMinX -= padding; pcbMinY -= padding;
+                pcbMaxX += padding; pcbMaxY += padding;
+            } else { // Default PCB size if no elements
+                pcbMinX = -50 - padding; pcbMinY = -40 - padding;
+                pcbMaxX = 50 + padding; pcbMaxY = 40 + padding;
+            }
+
+            const pcbWidth = Math.max(10, pcbMaxX - pcbMinX);
+            const pcbDepth = Math.max(10, pcbMaxY - pcbMinY);
+            const pcbCenterX = pcbMinX + pcbWidth / 2;
+            const pcbCenterZ = pcbMinY + pcbDepth / 2; // Z in 3D corresponds to Y in 2D layout
+
+            // 3. Update or create PCB base (pcbMesh)
+            // The top surface of the PCB will be at Y=0 in the 3D scene.
+            if (pcbMesh) {
+                const geomParams = pcbMesh.geometry.parameters;
+                const dimensionsChanged = Math.abs(geomParams.width - pcbWidth) > 0.1 ||
+                                          Math.abs(geomParams.depth - pcbDepth) > 0.1 || // Renamed from height for BoxGeometry context
+                                          Math.abs(geomParams.height - PCB_THICKNESS_3D) > 0.1; // Renamed from depth for BoxGeometry context
+
+                if (dimensionsChanged) {
+                    disposeThreeObject(pcbMesh);
+                    pcbMesh = null;
+                } else {
+                    pcbMesh.position.set(pcbCenterX, -PCB_THICKNESS_3D / 2, pcbCenterZ);
+                    if (pcbMesh.material.color.getHex() !== AppState.threeColors.pcb) {
+                         pcbMesh.material.dispose(); // Dispose old material
+                         pcbMesh.material = pcbMaterial.clone(); // Assign new or updated
+                    }
+                }
+            }
+
+            if (!pcbMesh) {
+                const pcbGeo = new THREE.BoxGeometry(pcbWidth, PCB_THICKNESS_3D, pcbDepth);
+                pcbMesh = new THREE.Mesh(pcbGeo, pcbMaterial.clone());
+                pcbMesh.name = "PCB_BASE";
+                pcbMesh.position.set(pcbCenterX, -PCB_THICKNESS_3D / 2, pcbCenterZ);
+                threeScene.add(pcbMesh);
+            }
+
+            if (threeControls) { // Ensure controls target the center of the current PCB
+                threeControls.target.set(pcbCenterX, 0, pcbCenterZ);
+            }
+
+            // 4. Synchronize 3D elements with AppState.layoutElements
+            const currentElementIdsInScene = new Set(threeElementsMap.keys());
+            const appElementIds = new Set(AppState.layoutElements.map(el => el.id));
+
+            // 4a. Remove 3D objects for elements no longer in AppState
+            currentElementIdsInScene.forEach(id => {
+                if (!appElementIds.has(id)) {
+                    removeElementFromThreeScene(id); // This handles dispose and removal from map
+                }
+            });
+
+            // 4b. Iterate over AppState.layoutElements to update/create 3D objects
+            AppState.layoutElements.forEach(el => {
+                if (!el || !el.id || !el.properties) return; // Basic check
+
+                const elX = el.x || 0;
+                const elY = el.y || 0; // This is Z in 3D
+                const elWidth = el.width || 0.1; // Default to small non-zero if undefined for geometry
+                const elHeight = el.height || 0.1; // Default to small non-zero if undefined for geometry (this is Depth in 3D Box)
+                const elRotationDeg = el.rotation || 0;
+
+                let actual3DHeight, yPosOnPcb;
+                if (el.type === 'track') {
+                    actual3DHeight = parseFloat(el.properties.thickness_3d || DEFAULT_TRACK_THICKNESS_3D);
+                } else if (el.type === 'pad') {
+                    actual3DHeight = parseFloat(el.properties['3d_height'] || DEFAULT_PAD_THICKNESS_3D);
+                } else { // footprint
+                    actual3DHeight = parseFloat(el.properties['3d_height'] || DEFAULT_COMPONENT_HEIGHT_3D);
+                }
+                yPosOnPcb = actual3DHeight / 2; // Center of the component/pad/track height, places bottom at Y=0 on PCB
+
+                let existingThreeObj = threeElementsMap.get(el.id);
+                let needsRecreation = false;
+
+                if (existingThreeObj) {
+                    if (el.type === 'footprint' || el.type === 'pad') {
+                        const geomParams = existingThreeObj.geometry.parameters;
+                        let dimensionsChanged = false;
+
+                        // Check main body height (actual3DHeight is for Y dimension in THREE)
+                        if (Math.abs(geomParams.height - actual3DHeight) > 0.01) {
+                            dimensionsChanged = true;
+                        }
+
+                        if (!dimensionsChanged) {
+                            if (existingThreeObj.geometry.type === "BoxGeometry") {
+                                if (Math.abs(geomParams.width - elWidth) > 0.01 ||
+                                    Math.abs(geomParams.depth - elHeight) > 0.01) { // elHeight is depth for Box
+                                    dimensionsChanged = true;
+                                }
+                            } else if (existingThreeObj.geometry.type === "CylinderGeometry") {
+                                // For footprints like THT caps, elWidth might be diameter. For pads, properties.diameter.
+                                const expectedDiameter = parseFloat(el.properties.diameter || el.properties['3d_diameter'] || elWidth);
+                                if (Math.abs(geomParams.radiusTop - (expectedDiameter / 2)) > 0.01 ||
+                                    Math.abs(geomParams.radiusBottom - (expectedDiameter / 2)) > 0.01) {
+                                    dimensionsChanged = true;
+                                }
+                            }
+                        }
+                        if (dimensionsChanged) {
+                            needsRecreation = true;
+                        }
+                    }
+                    // For tracks, children are always recreated, group is reused.
+
+                    if (needsRecreation) {
+                        removeElementFromThreeScene(el.id); // Also removes from map
+                        existingThreeObj = null;
+                    }
+                }
+
+                // --- Update or Create ---
+                if (existingThreeObj) { // Update existing (if not set to null by recreation logic)
+                    if (el.type === 'track') {
+                        existingThreeObj.position.set(0, yPosOnPcb, 0); // Group is at (0, yPos, 0) relative to scene
+
+                        // Remove old segments
+                        while(existingThreeObj.children.length > 0){
+                            disposeThreeObject(existingThreeObj.children[0]); // dispose and remove from parent
+                        }
+
+                        // Add new segments
+                        const trackWidth = parseFloat(el.properties.width || 0.5);
+                        if (el.points && el.points.length > 1) {
+                            for (let i = 0; i < el.points.length - 1; i++) {
+                                const p1 = el.points[i]; const p2 = el.points[i+1];
+                                const v1 = new THREE.Vector3(p1.x, 0, p1.y); // Y is 0 within the group
+                                const v2 = new THREE.Vector3(p2.x, 0, p2.y);
+                                const distance = v1.distanceTo(v2);
+                                if (distance < 0.001) continue;
+
+                                const segmentGeom = new THREE.BoxGeometry(trackWidth, actual3DHeight, distance);
+                                const segmentMesh = new THREE.Mesh(segmentGeom, trackMaterial.clone());
+                                segmentMesh.name = `TrackSeg_${el.id}_${i}`;
+                                segmentMesh.position.lerpVectors(v1, v2, 0.5);
+                                segmentMesh.lookAt(v2);
+                                existingThreeObj.add(segmentMesh);
+                            }
+                        }
+                    } else { // Footprint or Pad (already checked for dimension changes)
+                        const newPosX = elX + elWidth / 2; // Center X
+                        const newPosZ = elY + elHeight / 2; // Center Z (from 2D Y)
+                        const newRotY = -THREE.MathUtils.degToRad(elRotationDeg);
+
+                        existingThreeObj.position.set(newPosX, yPosOnPcb, newPosZ);
+                        existingThreeObj.rotation.y = newRotY;
+
+                        // Update material if necessary
+                        if (el.type === 'footprint') {
+                            const compDef = AppState.footprintLibrary[el.componentId] || {};
+                            let targetMaterialChanged = false;
+
+                            if (el.componentId && (el.componentId.startsWith('LED_') || (compDef.properties && compDef.properties.color))) {
+                                const ledColorProp = (el.properties.color || (compDef.properties && compDef.properties.color) || '').toLowerCase();
+                                let ledHexColor = 0xffcc00; // Default if not specified
+                                if (ledColorProp === 'rojo' || ledColorProp === 'red') ledHexColor = 0xff0000;
+                                else if (ledColorProp === 'verde' || ledColorProp === 'green') ledHexColor = 0x00ff00;
+                                else if (ledColorProp === 'azul' || ledColorProp === 'blue') ledHexColor = 0x0000ff;
+
+                                if (!existingThreeObj.material.isMeshStandardMaterial || !existingThreeObj.material.emissive || existingThreeObj.material.emissive.getHex() !== ledHexColor) {
+                                    existingThreeObj.material.dispose();
+                                    existingThreeObj.material = ledONMaterial(ledHexColor);
+                                    targetMaterialChanged = true;
+                                }
+                            } else { // Not an LED or no color property
+                                if (existingThreeObj.material.uuid !== componentBodyMaterial.uuid && !existingThreeObj.material.emissive) { // Check if it's not default and not an LED
+                                   existingThreeObj.material.dispose();
+                                   existingThreeObj.material = componentBodyMaterial.clone();
+                                   targetMaterialChanged = true;
+                                } else if (existingThreeObj.material.emissive && existingThreeObj.material.emissive.getHex() !== 0x000000) { // Was an LED, now it's not
+                                   existingThreeObj.material.dispose();
+                                   existingThreeObj.material = componentBodyMaterial.clone();
+                                   targetMaterialChanged = true;
+                                }
+                            }
+                             // If material didn't change but the main template color did
+                            if (!targetMaterialChanged && existingThreeObj.material.color.getHex() !== AppState.threeColors.componentBody && !existingThreeObj.material.emissive) {
+                                existingThreeObj.material.color.set(AppState.threeColors.componentBody);
+                            }
+
+
+                        } else if (el.type === 'pad') {
+                            if (existingThreeObj.material.uuid !== smdPadMaterial.uuid) { // Check by template UUID for simple cases
+                                existingThreeObj.material.dispose();
+                                existingThreeObj.material = smdPadMaterial.clone();
+                            } else if (existingThreeObj.material.color.getHex() !== AppState.threeColors.smdPad) { // If it is the right type but color changed
+                                existingThreeObj.material.color.set(AppState.threeColors.smdPad);
+                            }
+                        }
+                    }
+                } else { // Create new 3D object
+                    let newThreeObj;
+                    const newObjPosX = elX + elWidth / 2;
+                    const newObjPosZ = elY + elHeight / 2;
+                    const newObjRotY = -THREE.MathUtils.degToRad(elRotationDeg);
+
+                    if (el.type === 'footprint') {
+                        let geometry;
+                        const compDef = AppState.footprintLibrary[el.componentId];
+                        const d_diameter = parseFloat(el.properties['3d_diameter']);
+
+                        if (compDef && (compDef.name.includes('(THT)') || compDef.name.includes('Elect.') || compDef.name.includes('Radial')) && d_diameter > 0) {
+                            geometry = new THREE.CylinderGeometry(d_diameter / 2, d_diameter / 2, actual3DHeight, 16);
+                        } else {
+                            geometry = new THREE.BoxGeometry(elWidth, actual3DHeight, elHeight); // elHeight is depth
+                        }
+
+                        let matToUse = componentBodyMaterial.clone();
+                        if (el.componentId && (el.componentId.startsWith('LED_') || (compDef && compDef.properties && compDef.properties.color))) {
+                            const ledColorProp = (el.properties.color || (compDef.properties && compDef.properties.color) || '').toLowerCase();
+                            let ledHexColor = 0xffcc00;
+                            if (ledColorProp === 'rojo' || ledColorProp === 'red') ledHexColor = 0xff0000;
+                            else if (ledColorProp === 'verde' || ledColorProp === 'green') ledHexColor = 0x00ff00;
+                            else if (ledColorProp === 'azul' || ledColorProp === 'blue') ledHexColor = 0x0000ff;
+                            matToUse = ledONMaterial(ledHexColor);
+                        }
+                        newThreeObj = new THREE.Mesh(geometry, matToUse);
+                        newThreeObj.name = el.properties.ref || `Footprint_${el.id}`;
+                        newThreeObj.position.set(newObjPosX, yPosOnPcb, newObjPosZ);
+                        newThreeObj.rotation.y = newObjRotY;
+
+                    } else if (el.type === 'pad') {
+                        let padGeo;
+                        const padThickness = actual3DHeight;
+                        if (el.properties.type === 'rect' || (!el.properties.diameter && (el.properties.pad_width || elWidth) && (el.properties.pad_height || elHeight))) {
+                            padGeo = new THREE.BoxGeometry(parseFloat(el.properties.pad_width || elWidth), padThickness, parseFloat(el.properties.pad_height || elHeight));
+                        } else { // round
+                            const padDiameter = parseFloat(el.properties.diameter || elWidth); // Fallback to elWidth if diameter not present
+                            padGeo = new THREE.CylinderGeometry(padDiameter / 2, padDiameter / 2, padThickness, 16);
+                        }
+                        newThreeObj = new THREE.Mesh(padGeo, smdPadMaterial.clone());
+                        newThreeObj.name = `Pad_${el.id}`;
+                        newThreeObj.position.set(newObjPosX, yPosOnPcb, newObjPosZ);
+                        // Pads typically don't need individual rotation if part of a footprint; footprint rotation handles it.
+                        // If they are standalone and can be rotated, then: newThreeObj.rotation.y = newObjRotY;
+                        // For round pads, rotation.y has no visual effect anyway.
+
+                    } else if (el.type === 'track' && el.points && el.points.length > 1) {
+                        const trackWidth = parseFloat(el.properties.width || 0.5);
+                        const group = new THREE.Group();
+                        group.name = `TrackGroup_${el.id}`;
+                        for (let i = 0; i < el.points.length - 1; i++) {
+                            const p1 = el.points[i]; const p2 = el.points[i+1];
+                            const v1 = new THREE.Vector3(p1.x, 0, p1.y); // Y is 0 for points within the group
+                            const v2 = new THREE.Vector3(p2.x, 0, p2.y);
+                            const distance = v1.distanceTo(v2);
+                            if (distance < 0.001) continue;
+
+                            const segmentGeom = new THREE.BoxGeometry(trackWidth, actual3DHeight, distance);
+                            const segmentMesh = new THREE.Mesh(segmentGeom, trackMaterial.clone());
+                            segmentMesh.name = `TrackSeg_${el.id}_${i}`;
+                            segmentMesh.position.lerpVectors(v1, v2, 0.5);
+                            segmentMesh.lookAt(v2);
+                            group.add(segmentMesh);
+                        }
+                        newThreeObj = group;
+                        newThreeObj.position.set(0, yPosOnPcb, 0); // Group is positioned, children are relative
+                    }
+
+                    if (newThreeObj) {
+                        threeScene.add(newThreeObj);
+                        threeElementsMap.set(el.id, newThreeObj);
+                    }
+                }
+            });
+        }
+
+        animateThreeJS.animationFrameId = null;
+        function animateThreeJS() {  
+            if (AppState.activeViewMode !== '3d' || !threeRenderer || !threeScene || !threeCamera || !threeModulesLoaded) {
+                if(animateThreeJS.animationFrameId) cancelAnimationFrame(animateThreeJS.animationFrameId);
+                animateThreeJS.animationFrameId = null;
+                return;
+            }
+            animateThreeJS.animationFrameId = requestAnimationFrame(animateThreeJS);
+            if (threeControls) threeControls.update();
+            threeRenderer.render(threeScene, threeCamera);
+        }
+
+        // --- Gerber Export/Import ---
+        function formatGerberCoord(value, integerPlaces = 4, decimalPlaces = 6) {
+            const factor = Math.pow(10, decimalPlaces);
+            const scaledValue = Math.round(value * factor);
+            let str = Math.abs(scaledValue).toString().padStart(integerPlaces + decimalPlaces, '0');
+            if (value < 0) str = '-' + str;
+            return str;
+        }
+        function exportToGerber() {
+            if (AppState.layoutElements.length === 0) { alert("Nada que exportar."); return; }
+            console.log("Exportando a Gerber...");
+            let gtl = `G04 CalypsoLabs PCB Maker Export - Top Copper Layer (GTL)*\n`; // Top Copper
+            gtl += `%FSLAX${4}${6}Y${4}${6}*%\n`; // Format: Leading zeros, Absolute, X 4.6, Y 4.6
+            gtl += `%MOIN*%\n`; // Mode: Inches (KiCad often uses MM, but IN is common too) - let's use MM for consistency
+            gtl += `%MOMM*%\n`; // Mode: Millimeters
+            gtl += `G01*\n`;    // Linear interpolation
+            gtl += `G75*\n`;    // Circular interpolation (multi-quadrant)
+            gtl += `D02*\n`;    // Operation: Move (D02), Plot (D01), Flash (D03)
+
+            // Define apertures (simplified: one for tracks, one for round pads, one for rect pads)
+            let apertureIndex = 10;
+            const trackApertureMap = new Map();
+            const padRoundApertureMap = new Map();
+            const padRectApertureMap = new Map();
+
+            AppState.layoutElements.forEach(el => {
+                if (el.type === 'track' && el.properties.width && !trackApertureMap.has(el.properties.width)) {
+                    gtl += `%ADD${apertureIndex}C,${el.properties.width.toFixed(6)}*%\n`; // Circle aperture for track
+                    trackApertureMap.set(el.properties.width, apertureIndex++);
+                } else if (el.type === 'pad' && el.properties.type === 'round' && el.properties.diameter && !padRoundApertureMap.has(el.properties.diameter)) {
+                    gtl += `%ADD${apertureIndex}C,${el.properties.diameter.toFixed(6)}*%\n`; // Circle aperture for round pad
+                    padRoundApertureMap.set(el.properties.diameter, apertureIndex++);
+                } else if (el.type === 'pad' && el.properties.type === 'rect' && el.properties.pad_width && el.properties.pad_height && !padRectApertureMap.has(`${el.properties.pad_width}x${el.properties.pad_height}`)) {
+                    gtl += `%ADD${apertureIndex}R,${el.properties.pad_width.toFixed(6)}X${el.properties.pad_height.toFixed(6)}*%\n`; // Rectangle aperture for rect pad
+                    padRectApertureMap.set(`${el.properties.pad_width}x${el.properties.pad_height}`, apertureIndex++);
+                }
+            });
+            
+            AppState.layoutElements.forEach(el => {
+                if (el.type === 'track' && el.points && el.points.length > 0) {
+                    const aperture = trackApertureMap.get(el.properties.width);
+                    if (aperture) {
+                        gtl += `D${aperture}*\n`; // Select aperture
+                        el.points.forEach((p, i) => {
+                            gtl += `X${formatGerberCoord(p.x)}Y${formatGerberCoord(p.y)}${i === 0 ? 'D02' : 'D01'}*\n`; // Move then draw
+                        });
+                    }
+                } else if (el.type === 'pad') {
+                    let aperture;
+                    if(el.properties.type === 'round' && el.properties.diameter) aperture = padRoundApertureMap.get(el.properties.diameter);
+                    else if (el.properties.type === 'rect' && el.properties.pad_width && el.properties.pad_height) aperture = padRectApertureMap.get(`${el.properties.pad_width}x${el.properties.pad_height}`);
+                    
+                    if (aperture) {
+                        gtl += `D${aperture}*\n`; // Select aperture
+                        // For pads, flash at their center. Account for rotation if necessary for rectangular pads (Gerber spec supports rotated flashes)
+                        // For simplicity, we assume pads are not rotated or Gerber viewer handles it.
+                        // The X, Y is the center of the footprint element in our system.
+                        const centerX = el.x + (el.width / 2);
+                        const centerY = el.y + (el.height / 2);
+                        gtl += `X${formatGerberCoord(centerX)}Y${formatGerberCoord(centerY)}D03*\n`; // Flash aperture
+                    }
+                }
+            });
+
+            gtl += `M02*\n`; // End of file
+            downloadFile(gtl, 'top_copper.gtl', 'text/plain');
+            alert("Archivo Gerber (GTL - Top Copper) simplificado generado. Faltarían otras capas y drills.");
+        }
+        function downloadFile(content, fileName, contentType) { const a = document.createElement("a"); const file = new Blob([content], {type: contentType}); a.href = URL.createObjectURL(file); a.download = fileName; a.click(); URL.revokeObjectURL(a.href); }
+        function importGerber() { alert("Importación de Gerber no implementada aún."); }
+
+
+        // --- Initialization ---
+        function init() {
+            DOM.modeSchematicBtn.addEventListener('click', () => handleViewModeChange('schematic'));
+            DOM.modeLayoutBtn.addEventListener('click', () => handleViewModeChange('layout'));
+            DOM.mode3DBtn.addEventListener('click', () => handleViewModeChange('3d'));
+            DOM.modeExampleBtn.addEventListener('click', () => handleViewModeChange('example'));
+
+
+            DOM.sidebarTabs.forEach(tab => tab.addEventListener('click', handleSidebarTabClick));
+
+            DOM.toolSchematicSelectBtn.addEventListener('click', () => handleSchematicToolChange('select'));
+            DOM.toolDrawWireBtn.addEventListener('click', () => handleSchematicToolChange('wire'));
+            DOM.toolLayoutSelectBtn.addEventListener('click', () => handleLayoutToolChange('select'));
+            DOM.toolDrawTrackBtn.addEventListener('click', () => handleLayoutToolChange('track'));
+            
+            DOM.zoomInBtn.addEventListener('click', () => handleZoom(1.2, (AppState.activeViewMode === 'schematic' ? DOM.schematicCanvasView : DOM.layoutCanvasView).clientWidth/2, (AppState.activeViewMode === 'schematic' ? DOM.schematicCanvasView : DOM.layoutCanvasView).clientHeight/2));
+            DOM.zoomOutBtn.addEventListener('click', () => handleZoom(1/1.2, (AppState.activeViewMode === 'schematic' ? DOM.schematicCanvasView : DOM.layoutCanvasView).clientWidth/2, (AppState.activeViewMode === 'schematic' ? DOM.schematicCanvasView : DOM.layoutCanvasView).clientHeight/2));
+            DOM.zoomFitBtn.addEventListener('click', handleZoomFit);
+            
+            if (DOM.exportGerberBtn) DOM.exportGerberBtn.addEventListener('click', exportToGerber);
+            if (DOM.importGerberBtn) DOM.importGerberBtn.addEventListener('click', importGerber);
+            if (DOM.btnUpdateLayoutFromSchematic) DOM.btnUpdateLayoutFromSchematic.addEventListener('click', updateLayoutFromSchematic);
+
+            [DOM.schematicSvgCanvas, DOM.layoutSvgCanvas].forEach(canvas => {
+                if (!canvas) return;
+                canvas.addEventListener('mousedown', handleCanvasMouseDown);
+                canvas.addEventListener('mousemove', handleCanvasMouseMove);
+                canvas.addEventListener('mouseleave', handleCanvasMouseLeave);
+                canvas.addEventListener('wheel', handleCanvasWheel, { passive: false });
+                canvas.addEventListener('contextmenu', event => {
+                    if ((AppState.activeViewMode === 'schematic' && AppState.isDrawingWire) ||
+                        (AppState.activeViewMode === 'layout' && AppState.isDrawingTrack)) {
+                        event.preventDefault();
+                    }
+                });
+                canvas.addEventListener('dragover', handleCanvasDragOver);
+                canvas.addEventListener('drop', handleCanvasDrop);
+            });
+
+            window.addEventListener('mouseup', handleCanvasMouseUp); 
+            document.addEventListener('keydown', handleDocumentKeyDown);
+
+            DOM.threeColorInputs.pcb.addEventListener('input', (e) => { AppState.threeColors.pcb = e.target.value; if (AppState.activeViewMode === '3d') updateThreeScene(); });
+               DOM.threeColorInputs.component.addEventListener('input', (e) => { AppState.threeColors.componentBody = e.target.value; if (AppState.activeViewMode === '3d') updateThreeScene(); });
+               DOM.threeColorInputs.pad.addEventListener('input', (e) => { AppState.threeColors.smdPad = e.target.value; if (AppState.activeViewMode === '3d') updateThreeScene(); });
+               DOM.threeColorInputs.track.addEventListener('input', (e) => { AppState.threeColors.track = e.target.value; if (AppState.activeViewMode === '3d') updateThreeScene(); });
+               
+               DOM.btnReload3DView.addEventListener('click', () => {if (AppState.activeViewMode === '3d') {console.log("Forzando recarga completa de la escena 3D..."); disposeThreeScene(); loadThreeJSModules().then(() => {if (threeModulesLoaded) { initThreeJS(); updateThreeScene(); animateThreeJS(); } }).catch(err => { console.error("Error al recargar la vista 3D (carga de módulos):", err); alert("No se pudo recargar la vista 3D debido a un error con los módulos."); }); } else { console.log("Botón 'Recargar Vista 3D' presionado, pero no se está en modo 3D. No se hace nada."); } });
+
+            populateSchematicSymbolLibrary();
+            populateFootprintLibrary();
+            
+            // Attach drag listeners after populating
+            DOM.symbolLibraryList.addEventListener('dragstart', handleLibraryItemDragStart);
+            DOM.footprintLibraryList.addEventListener('dragstart', handleLibraryItemDragStart);
+
+            handleViewModeChange('schematic'); // Start in schematic view
+            handleSidebarTabClick({target: DOM.sidebarTabs[0]});
+            handleZoomFit();         
+            updateStatusBar();       
+
+            const tutorialButton = document.createElement('button');
+            tutorialButton.id = "start-tutorial-btn"; tutorialButton.textContent = 'Tutorial Guiado';
+            tutorialButton.className = 'fixed top-1 right-5 p-2 px-4 bg-calypso-accent text-gray-600 rounded-md shadow-lg hover:bg-calypso-accent-hover z-[2000]';
+            tutorialButton.onclick = startTutorial;
+            document.body.appendChild(tutorialButton);
+        }
+
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+        else init();
+
+    </script>
+</body>
+</html>
