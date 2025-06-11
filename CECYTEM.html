@@ -1,0 +1,1538 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>CECYTEM Portal | SPA </title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    :root {
+      --dci-morado:      #3A7CA5;   /* Azul pizarra CECYTEM */
+      --dci-morado2:     #2F4E75;   /* Azul más profundo CECYTEM */
+      --dci-oscuro:      #161B22;   /* Fondo oscuro CECYTEM */
+      --dci-claro:       #F0F4F8;   /* Fondo claro CECYTEM */
+      --dci-texto-oscuro: #E0E6F1;  /* Texto oscuro CECYTEM */
+      --dci-texto-claro: #1A2B42;   /* Texto claro CECYTEM */
+      
+      --dci-glass-bg-dark:   rgba(58, 124, 165, 0.15); 
+      --dci-glass-border-dark: rgba(168, 218, 220, 0.2); 
+      
+      --dci-glass-bg-light:   rgba(200, 220, 240, 0.3); 
+      --dci-glass-border-light: rgba(58, 124, 165, 0.15);
+
+      --dci-alerta:    #F9D423;   
+      --dci-ok:        #87C38F;   
+      --dci-error:     #E57373;   
+      --dci-accent:    #A8DADC;   
+      --dci-naranja-acento: #F7A072; 
+
+      --color-estado-ok: var(--dci-ok);
+      --color-estado-alerta: var(--dci-alerta);
+      --color-estado-error: var(--dci-error);
+      --color-estado-revision: #64B5F6; 
+      --color-estado-pendiente: #A0AEC0;
+    }
+    body { font-family: 'Inter', sans-serif; transition: background 0.25s, color 0.25s; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;}
+    .dark-mode { background: var(--dci-oscuro); color: var(--dci-texto-oscuro); }
+    .dark-mode .glass { background: var(--dci-glass-bg-dark); border: 1px solid var(--dci-glass-border-dark); }
+    .dark-mode input, .dark-mode select, .dark-mode textarea { background-color: rgba(47, 78, 117, 0.3); border: 1px solid var(--dci-glass-border-dark); color: var(--dci-texto-oscuro); }
+    .dark-mode input:focus, .dark-mode select:focus, .dark-mode textarea:focus { border-color: var(--dci-morado); box-shadow: 0 0 0 2px rgba(58, 124, 165, 0.4); }
+    .dark-mode ::placeholder { color: rgba(135, 164, 196, 0.6); }
+    .dark-mode .sidebar-link:hover:not(.active) { background-color: rgba(58, 124, 165, 0.15); color: var(--dci-accent); }
+    .dark-mode .sidebar-link.active { background-color: var(--dci-morado); color: var(--dci-texto-oscuro); }
+    .dark-mode thead th { background-color: rgba(58, 124, 165, 0.1); color: var(--dci-accent); }
+    .dark-mode tbody tr:hover { background-color: rgba(58, 124, 165, 0.08); }
+    .dark-mode td, .dark-mode th { border-bottom: 1px solid var(--dci-glass-border-dark); }
+    .light-mode { background: var(--dci-claro); color: var(--dci-texto-claro); }
+    .light-mode .glass { background: var(--dci-glass-bg-light); border: 1px solid var(--dci-glass-border-light); }
+    .light-mode input, .light-mode select, .light-mode textarea { background-color: rgba(255,255,255,0.6); border: 1px solid var(--dci-glass-border-light); color: var(--dci-texto-claro); }
+    .light-mode input:focus, .light-mode select:focus, .light-mode textarea:focus { border-color: var(--dci-morado); box-shadow: 0 0 0 2px rgba(58, 124, 165, 0.3); }
+    .light-mode ::placeholder { color: rgba(70, 90, 120, 0.7); }
+    .light-mode .sidebar-link:hover:not(.active) { background-color: rgba(58, 124, 165, 0.1); color: var(--dci-morado2); }
+    .light-mode .sidebar-link.active { background-color: var(--dci-morado); color: var(--dci-claro); }
+    .light-mode thead th { background-color: rgba(58, 124, 165, 0.08); color: var(--dci-morado); }
+    .light-mode tbody tr:hover { background-color: rgba(58, 124, 165, 0.05); }
+    .light-mode td, .light-mode th { border-bottom: 1px solid var(--dci-glass-border-light); }
+    .glass { backdrop-filter: blur(12px); border-radius: 1rem; box-shadow: 0 6px 24px rgba(26, 43, 66,0.1); }
+    .btn-main { background: var(--dci-morado); color: var(--dci-texto-oscuro); }
+    .btn-main:hover { background: var(--dci-morado2);}
+    .btn-accent { background-color: var(--dci-naranja-acento); color: var(--dci-oscuro); }
+    .btn-accent:hover { background-color: #f58a57; }
+    .sidebar-collapsed { width: 4.5rem !important; }
+    .sidebar-collapsed .sidebar-text, .sidebar-collapsed .sidebar-logo-text, .sidebar-collapsed #userInfoSidebar { display: none; }
+    .sidebar-collapsed #collapseIcon { transform: rotate(180deg); }
+    .module-anim { animation: fadeinup .4s;}
+    @keyframes fadeinup { from {opacity:0; transform: translateY(20px);} to {opacity:1; transform:none;}}
+    ::-webkit-scrollbar { width:7px; height: 7px; background: transparent;}
+    ::-webkit-scrollbar-thumb { background: rgba(58, 124, 165,0.3); border-radius: 3.5px;}
+    ::-webkit-scrollbar-thumb:hover { background: rgba(58, 124, 165,0.5); }
+    input, select, textarea { padding: 0.6rem 0.7rem; border-radius: 0.3rem; width: 100%; transition: border-color 0.2s, box-shadow 0.2s; }
+    input:focus, select:focus, textarea:focus { outline: none; }
+    @media (max-width: 767px) { #sidebar { width: 4.5rem !important; min-width: 0 !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important; } #sidebar .sidebar-text, #sidebar .sidebar-logo-text { display: none !important; } #collapseSide { display: none !important; } }
+    .svg-background-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; opacity: 0.2; pointer-events: none; }
+    @media print { body > *:not(#modalReporteDetalle) { display:none !important; } #modalReporteDetalle, #modalReporteDetalle * { display: block !important; } #modalReporteDetalle { position: static !important; background: white !important; } .print\:hidden { display: none !important; } .print\:bg-white { background: white !important; } .print\:p-0 { padding: 0 !important; } .print\:max-w-full { max-width: 100vw !important; width: 100vw !important; } .print\:rounded-none { border-radius: 0 !important; } .print\:shadow-none { box-shadow: none !important; } }
+  </style>
+</head>
+<body class="dark-mode">
+
+<!-- Fondo SVG Animado de CECYTEM -->
+<div class="svg-background-container">
+    <!-- ... SVG content ... -->
+    <svg width="100%" height="100%" preserveAspectRatio="xMidYMid slice" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <defs> <radialGradient id="softGlow" cx="50%" cy="50%" r="70%"> <stop offset="0%" stop-color="var(--dci-accent)" stop-opacity="0.3"/> <stop offset="100%" stop-color="var(--dci-accent)" stop-opacity="0"/> </radialGradient> <filter id="blurFilter"> <feGaussianBlur in="SourceGraphic" stdDeviation="0.3" /> </filter> </defs> <g filter="url(#blurFilter)"> <circle fill="url(#softGlow)" cx="20" cy="30" r="15"> <animate attributeName="cx" values="20; 80; 20" dur="20s" repeatCount="indefinite" /> <animate attributeName="cy" values="30; 70; 30" dur="22s" repeatCount="indefinite" /> <animate attributeName="r" values="15; 5; 15" dur="18s" repeatCount="indefinite" /> <animate attributeName="opacity" values="0.3;0.6;0.3" dur="15s" repeatCount="indefinite" /> </circle> <circle fill="url(#softGlow)" cx="70" cy="60" r="20" opacity="0.4"> <animate attributeName="cx" values="70; 30; 70" dur="25s" repeatCount="indefinite" /> <animate attributeName="cy" values="60; 20; 60" dur="19s" repeatCount="indefinite" /> <animate attributeName="r" values="20; 10; 20" dur="23s" repeatCount="indefinite" /> <animate attributeName="opacity" values="0.4;0.2;0.4" dur="16s" repeatCount="indefinite" /> </circle> <circle fill="var(--dci-morado)" cx="50" cy="50" r="8" opacity="0.5"> <animate attributeName="cx" values="50; 60; 40; 50" dur="15s" begin="-5s" repeatCount="indefinite" /> <animate attributeName="cy" values="50; 40; 60; 50" dur="17s" begin="-5s" repeatCount="indefinite" /> <animate attributeName="r" values="8; 12; 8" dur="20s" begin="-5s" repeatCount="indefinite" /> </circle> <line stroke="var(--dci-morado)" stroke-width="0.2" stroke-opacity="0.3"> <animate attributeName="x1" values="0;100;0" dur="30s" repeatCount="indefinite" /> <animate attributeName="y1" values="10; 90; 10" dur="28s" repeatCount="indefinite" /> <animate attributeName="x2" values="100;0;100" dur="32s" repeatCount="indefinite" /> <animate attributeName="y2" values="80; 20; 80" dur="26s" repeatCount="indefinite" /> </line> <line stroke="var(--dci-accent)" stroke-width="0.15" stroke-opacity="0.2"> <animate attributeName="x1" values="20;70;20" dur="25s" begin="-3s" repeatCount="indefinite" /> <animate attributeName="y1" values="80;30;80" dur="22s" begin="-3s" repeatCount="indefinite" /> <animate attributeName="x2" values="90;10;90" dur="28s" begin="-3s" repeatCount="indefinite" /> <animate attributeName="y2" values="15;85;15" dur="20s" begin="-3s" repeatCount="indefinite" /> </line> </g> </svg>
+</div>
+
+<!-- Toasts -->
+<div id="toastsContainer" class="fixed bottom-5 right-5 z-[100] space-y-2"></div>
+
+<!-- Login -->
+<div id="loginScreen" class="fixed inset-0 flex items-center justify-center bg-opacity-90 z-40">
+    <!-- ... HTML del login ... -->
+    <div class="glass p-8 w-full max-w-md module-anim"> <div class="flex items-center justify-center mb-3"> <div class="rounded-full bg-[var(--dci-morado)] p-2 mr-2"> <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--dci-texto-oscuro)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-graduation-cap"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg> </div> <h1 class="text-3xl font-bold" style="color: var(--dci-morado)">CECYTEM</h1> </div> <p class="text-center mb-7 text-dci-accent">Portal Estudiantil</p> <form id="loginForm" class="space-y-6"> <input id="loginNumControl" type="text" placeholder="Número de Control / Usuario" required class="w-full px-4 py-3 rounded-lg" value="CECYTEM001"> <input id="loginContrasena" type="password" placeholder="Contraseña" required class="w-full px-4 py-3 rounded-lg" value="pass"> <button type="submit" class="btn-main w-full py-3 rounded-lg font-semibold text-lg transition">Entrar</button> </form> <div class="mt-5 text-center text-xs text-dci-accent"> Usuarios demo: <b>CECYTEM001</b>/pass, <b>ADMIN001</b>/adminpass </div> <div class="mt-4 text-center"> <button type="button" onclick="UIManager.openModal('modalAltaUsuario')" class="text-sm text-[var(--dci-morado)] hover:text-[var(--dci-morado2)] hover:underline focus:outline-none"> ¿No tienes cuenta? Regístrate aquí </button> </div> </div>
+</div>
+
+<!-- Modal para Alta de Nuevo Usuario/Estudiante -->
+<div id="modalAltaUsuario" class="fixed inset-0 bg-white/70 dark:bg-black/50 backdrop-blur-md flex items-center justify-center p-4 hidden z-50 transition-opacity duration-300">
+    <!-- ... HTML del modal de alta ... -->
+    <div class="glass p-6 sm:p-8 rounded-xl w-full max-w-md max-h-[95vh] overflow-y-auto module-anim shadow-2xl"> <div class="flex justify-between items-center mb-5"> <div class="flex items-center gap-3"> <ion-icon name="person-add-outline" class="text-3xl text-[var(--dci-morado)]"></ion-icon> <h2 class="text-2xl font-semibold text-[var(--dci-morado)]">Crear Cuenta</h2> </div> <button onclick="UIManager.closeModal('modalAltaUsuario')" class="text-3xl text-dci-accent hover:text-[var(--dci-morado)] transition-colors"> <ion-icon name="close-circle-outline"></ion-icon> </button> </div> <p class="text-sm text-dci-accent mb-6 text-center">Completa tus datos para registrarte.</p> <form id="formAltaUsuario" class="space-y-5"> <div class="relative"> <label for="altaNombreCompleto" class="block mb-1.5 text-sm font-medium text-dci-accent">Nombre Completo</label> <input type="text" id="altaNombreCompleto" placeholder="Tu nombre y apellidos" required> </div> <div class="relative"> <label for="altaNumControl" class="block mb-1.5 text-sm font-medium text-dci-accent">Número de Control / Usuario</label> <input type="text" id="altaNumControl" placeholder="Ej: CECYTEM003 o admin002" required> <p class="text-xs text-dci-accent mt-1">Para administradores, usar un alias.</p> </div> <div class="relative"> <label for="altaCarrera" class="block mb-1.5 text-sm font-medium text-dci-accent">Carrera (solo estudiantes)</label> <select id="altaCarrera"> <option value="">Selecciona tu carrera (si aplica)</option> <option value="Programacion">Programación</option> <option value="Mecatronica">Mecatrónica</option> <option value="Electronica">Electrónica</option> <option value="Contabilidad">Contabilidad</option> </select> </div> <div class="relative"> <label for="altaRol" class="block mb-1.5 text-sm font-medium text-dci-accent">Tipo de Cuenta</label> <select id="altaRol" required> </select> </div> <div class="relative"> <label for="altaContrasena" class="block mb-1.5 text-sm font-medium text-dci-accent">Contraseña</label> <input type="password" id="altaContrasena" placeholder="Mínimo 4 caracteres" required> </div> <div class="relative"> <label for="altaConfirmarContrasena" class="block mb-1.5 text-sm font-medium text-dci-accent">Confirmar Contraseña</label> <input type="password" id="altaConfirmarContrasena" placeholder="Repite tu contraseña" required> </div> <button type="submit" class="w-full btn-main font-semibold py-3 rounded-lg text-base">Crear mi Cuenta</button> </form> <div class="mt-6 text-center"> <button type="button" onclick="UIManager.closeModal('modalAltaUsuario'); UIManager.openModal('loginScreen');" class="text-xs text-dci-accent hover:text-[var(--dci-morado)] hover:underline"> ¿Ya tienes cuenta? Inicia Sesión </button> </div> </div>
+</div>
+
+<!-- App -->
+<div id="appContainer" class="flex min-h-[100dvh] min-w-[100dvw] max-h-[100dvh] overflow-y-auto" style="display:none;">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="glass w-64 flex-shrink-0 p-4 flex flex-col transition-all duration-300 relative">
+        <!-- ... HTML del sidebar ... -->
+        <div class="flex items-center mb-6"> <div class="rounded-full bg-[var(--dci-morado)] p-2"> <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--dci-texto-oscuro)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg> </div> <span class="ml-3 font-bold text-lg sidebar-logo-text" style="color: var(--dci-morado)">CECYTEM Portal</span> </div> <nav id="sideNav" class="flex-1 space-y-1.5 overflow-y-auto"></nav> <div class="mt-auto pt-6 border-t border-[var(--dci-glass-border-dark)] dark:border-[var(--dci-glass-border-dark)] light:border-[var(--dci-glass-border-light)]"> <div id="userInfoSidebar" class="hidden md:block mb-3 p-2 rounded-md bg-black/5 dark:bg-black/5 light:bg-white/20 "> </div> <button id="modeToggle" class="w-full text-left flex items-center justify-center py-2 px-3 rounded hover:bg-[var(--dci-morado)]/10 dark:hover:bg-[var(--dci-morado)]/20 light:hover:bg-[var(--dci-morado)]/15 transition space-x-2"> <ion-icon name="contrast-outline" class="text-xl"></ion-icon> <span class="sidebar-text">Modo</span> </button> <button id="logoutButton" class="mt-2 w-full text-left flex items-center justify-center py-2 px-3 rounded bg-red-500/80 hover:bg-red-600/90 text-white transition space-x-2"> <ion-icon name="log-out-outline" class="text-xl"></ion-icon><span class="sidebar-text">Salir</span> </button> </div> <button id="collapseSide" class="absolute -right-4 top-16 rounded-full w-8 h-8 flex items-center justify-center bg-[var(--dci-morado)] hover:bg-[var(--dci-morado2)] transition shadow-md text-white"> <ion-icon name="chevron-back-outline" id="collapseIcon" class="text-lg transition-transform duration-300"></ion-icon> </button>
+    </aside>
+    <!-- Main Content -->
+    <main id="mainContent" class="flex-1 p-5 md:p-6 overflow-y-auto"></main>
+</div>
+
+<!-- Modal Genérico Detalle Trámite -->
+<div id="modalDetalleTramite" class="fixed inset-0 bg-black/10 backdrop-blur-md flex items-center justify-center p-4 hidden z-50">
+    <!-- ... HTML del modal detalle ... -->
+    <div class="glass p-6 rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto module-anim"> <div class="flex justify-between items-center mb-4"> <h2 id="modalDetalleTramiteTitulo" class="text-2xl font-semibold" style="color: var(--dci-morado);">Detalle</h2> <button onclick="UIManager.closeModal('modalDetalleTramite')" class="text-2xl hover:text-[var(--dci-morado)] transition-colors"> <ion-icon name="close-circle-outline"></ion-icon> </button> </div> <div id="modalDetalleTramiteContenido" class="space-y-4 text-sm"> <p class="text-dci-accent">Cargando detalles...</p> </div> <div id="modalDetalleAdminActions" class="mt-4 pt-4 border-t border-[var(--dci-glass-border-light)] dark:border-[var(--dci-glass-border-dark)] space-x-2 text-right hidden"> </div> </div>
+</div>
+
+<!-- Modal para Reporte/Impresión -->
+<div id="modalReporteDetalle" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 hidden print:bg-white">
+    <!-- ... HTML del modal reporte ... -->
+    <div id="reporteDetalleContent" class="bg-white dark:bg-dci-oscuro text-dci-texto-claro dark:text-dci-texto-oscuro max-w-2xl w-[95%] md:w-full h-[95%] md:h-full rounded-xl shadow-xl p-8 relative print:p-0 print:max-w-full print:rounded-none print:shadow-none overflow-y-auto"> 
+        <button onclick="UIManager.closeModal('modalReporteDetalle')" class="absolute top-5 right-6 text-3xl text-gray-500 hover:text-dci-morado print:hidden">
+              <ion-icon name="close-circle-outline"></ion-icon>
+            </button> 
+        <button onclick="window.print()" class="absolute top-5 left-5 text-lg px-4 py-1.5 btn-main rounded print:hidden"> <ion-icon name="print-outline" class="mr-2"></ion-icon>Imprimir </button> 
+        <div id="reporteDetallePlantillaContainer" class="pt-12 print:pt-0"> 
+            <div id="reporteDetallePlantilla" class="print:bg-white print:text-black"> </div> 
+        </div> 
+    </div>
+</div>
+
+
+<script>
+    // =================================================================================
+    //  NÚCLEO DE LA APLICACIÓN Y GESTIÓN DEL ESTADO
+    // =================================================================================
+    const AppState = {
+      // --- PROPIEDADES DEL ESTADO GLOBAL ---
+      usuario: null, // Objeto: Almacena la información del usuario que ha iniciado sesión. Es `null` si nadie ha iniciado sesión.
+      moduloActual: 'dashboard', // String: Identificador del módulo o vista que se está mostrando en el área principal.
+      temaOscuro: true,  // Booleano: Indica si el tema oscuro está activo (`true`) o el claro (`false`).
+      DOMElements: {},   // Objeto: Contendrá referencias a elementos del DOM de uso frecuente para optimizar el acceso.
+
+      // --- FUNCIONES AUXILIARES PARA PERSISTENCIA DE DATOS CON LOCALSTORAGE ---
+      /**
+       * Carga datos desde el almacenamiento local (localStorage) del navegador.
+       * @param {string} clave - La clave (nombre) bajo la cual se guardaron los datos en localStorage.
+       * @param {any} [valorPorDefecto=[]] - El valor que se retornará si no se encuentran datos para la clave especificada o si ocurre un error al parsear.
+       * @returns {any} Los datos recuperados y parseados (generalmente un objeto o array), o el `valorPorDefecto`.
+       */
+      loadFromLocalStorage(clave, valorPorDefecto = []) {
+          const valorAlmacenado = localStorage.getItem(clave);
+          if (valorAlmacenado) {
+              try { 
+                  return JSON.parse(valorAlmacenado); 
+              } catch (e) { 
+                  console.error("Error al parsear el item de localStorage: ", clave, e); 
+                  return valorPorDefecto; 
+              }
+          }
+          return valorPorDefecto;
+      },
+      /**
+       * Guarda datos en el almacenamiento local (localStorage) del navegador.
+       * Los datos se convierten a formato JSON antes de guardarse.
+       * @param {string} clave - La clave (nombre) bajo la cual se guardarán los datos.
+       * @param {any} datos - Los datos (objeto, array, etc.) que se van a guardar.
+       */
+      saveToLocalStorage(clave, datos) {
+          localStorage.setItem(clave, JSON.stringify(datos));
+      },
+
+      // --- DATOS GLOBALES DE LA APLICACIÓN ---
+      /**
+       * Inicializa los datos principales que la aplicación utilizará.
+       * Carga estos datos desde localStorage o, si no existen, utiliza un conjunto de datos por defecto.
+       * Esto incluye la lista de usuarios, solicitudes, pagos y notificaciones.
+       */
+      initData() {
+        // Carga la lista de usuarios registrados. Si no hay nada en localStorage bajo 'cecytem_usuarios',
+        // se utiliza la lista de usuarios de demostración proporcionada.
+        this.usuariosRegistrados = this.loadFromLocalStorage('cecytem_usuarios', [ 
+          { numControl: 'CECYTEM001', password: 'pass', nombreCompleto: 'Brandon Guzmán', carrera: 'Programación', datosCorrectos: true, rolKey: 'ESTUDIANTE' },
+          { numControl: 'CECYTEM002', password: 'pass', nombreCompleto: 'Ivan Carvajal', carrera: 'Mecatronica', datosCorrectos: false, rolKey: 'ESTUDIANTE' },
+          { numControl: 'ADMIN001', password: 'adminpass', nombreCompleto: 'Admin CECYTEM', carrera: null, datosCorrectos: true, rolKey: 'ADMIN' }
+        ]);
+        // Carga las solicitudes de documentos. Si no hay nada, se inicializa como un array vacío.
+        this.solicitudesDocumentos = this.loadFromLocalStorage('cecytem_solicitudes', []); 
+        // Carga el historial de pagos.
+        this.historialPagos = this.loadFromLocalStorage('cecytem_pagos', []); 
+        // Carga las notificaciones.
+        this.notificaciones = this.loadFromLocalStorage('cecytem_notificaciones', []); 
+      },
+      
+      // --- DATOS DE CONFIGURACIÓN (No suelen cambiar y no se guardan en localStorage por defecto) ---
+      // Define los diferentes tipos de documentos que los estudiantes pueden solicitar,
+      // incluyendo su costo, si están siempre disponibles, y cualquier nota o restricción horaria.
+      tiposDocumento: [
+        { id: 'constancia', nombre: 'Constancia de Estudios', costo: 50.00, disponibleSiempre: false, diasDisponibles: [0, 2], horaInicio: '09:00', horaFin: '14:00', nota: 'Disponible solo Lunes y Miércoles de 9:00 a 14:00.' },
+        { id: 'kardex', nombre: 'Kárdex Oficial', costo: 30.00, disponibleSiempre: true, nota: 'Disponible todo el tiempo.' },
+        { id: 'boleta', nombre: 'Boleta Parcial', costo: 0.00, disponibleSiempre: false, diasDisponibles: [], nota: 'Disponible solo durante periodos de evaluación.' }
+      ],
+      // Define los horarios de atención de las diferentes áreas administrativas del plantel.
+      horariosAtencion: [
+        { area: 'Control Escolar', dias: 'Lunes a Viernes', horario: '09:00 - 15:00', nota: 'Trámites generales, constancias.' },
+        { area: 'Cajas', dias: 'Lunes a Viernes', horario: '09:00 - 14:00', nota: 'Pagos de colegiaturas y servicios.' },
+      ],
+      // Mapeo de identificadores de rol (claves) a sus nombres descriptivos para mostrar en la UI.
+      ROLES: { ESTUDIANTE: 'Estudiante CECYTEM', ADMIN: 'Administrador CECYTEM' },
+      // Define qué roles se pueden seleccionar al crear una nueva cuenta de usuario.
+      ROL_KEYS_PARA_ALTA: ['ESTUDIANTE', 'ADMIN'],
+      // Configuración de la navegación principal. Define cada módulo (vista) de la aplicación:
+      // su ID, etiqueta para mostrar, icono y los roles de usuario que tienen permiso para acceder a él.
+      NAV_CONFIG: [
+        { id: 'dashboard', label: 'Inicio', icon: 'home-outline', roles: ['ESTUDIANTE', 'ADMIN'] },
+        { id: 'solicitarDocumentos', label: 'Solicitar Documentos', icon: 'document-text-outline', roles: ['ESTUDIANTE'] },
+        { id: 'realizarPagos', label: 'Realizar Pagos', icon: 'card-outline', roles: ['ESTUDIANTE'] },
+        { id: 'consultarTramites', label: 'Mis Trámites', icon: 'reader-outline', roles: ['ESTUDIANTE'] },
+        { id: 'notificaciones', label: 'Notificaciones', icon: 'notifications-outline', roles: ['ESTUDIANTE','ADMIN'] },
+        { id: 'calendarioAtencion', label: 'Horarios de Atención', icon: 'calendar-outline', roles: ['ESTUDIANTE'] },
+        { id: 'perfilConfig', label: 'Mi Perfil', icon: 'person-circle-outline', roles: ['ESTUDIANTE', 'ADMIN'] },
+        { id: 'adminGestionSolicitudes', label: 'Gestionar Solicitudes', icon: 'file-tray-stacked-outline', roles: ['ADMIN'] },
+        { id: 'adminAutorizarPagos', label: 'Autorizar Pagos', icon: 'cash-outline', roles: ['ADMIN'] },
+        { id: 'adminGestionUsuarios', label: 'Gestionar Usuarios', icon: 'people-outline', roles: ['ADMIN'] },
+      ],
+    };
+    // Se invoca initData inmediatamente para que los datos estén disponibles desde el inicio.
+    AppState.initData(); 
+
+    // =================================================================================
+    //  GESTOR DE INTERFAZ DE USUARIO (UIManager)
+    //  Responsable de todas las interacciones directas con el DOM (elementos HTML),
+    //  manejo de modales, mensajes toast (notificaciones flotantes) y cambio de tema visual.
+    // =================================================================================
+    const UIManager = {
+      /**
+       * Almacena referencias a elementos del DOM de uso frecuente en `AppState.DOMElements`.
+       * Esto optimiza el rendimiento al evitar repetidas búsquedas de `document.getElementById`.
+       * Se llama una sola vez, cuando la página ha cargado completamente.
+       */
+      cacheDOMElements() {
+          const DOMElements = AppState.DOMElements; // Atajo para referenciar AppState.DOMElements
+          DOMElements.loginScreen = document.getElementById('loginScreen');
+          DOMElements.formAltaUsuario = document.getElementById('formAltaUsuario');
+          DOMElements.appContainer = document.getElementById('appContainer');
+          DOMElements.loginForm = document.getElementById('loginForm');
+          DOMElements.mainContent = document.getElementById('mainContent');
+          DOMElements.sideNav = document.getElementById('sideNav');
+          DOMElements.sidebar = document.getElementById('sidebar');
+          DOMElements.collapseIcon = document.getElementById('collapseIcon');
+          DOMElements.modeToggleButton = document.getElementById('modeToggle');
+          DOMElements.logoutButton = document.getElementById('logoutButton');
+          DOMElements.toastsContainer = document.getElementById('toastsContainer');
+          DOMElements.userInfoSidebar = document.getElementById('userInfoSidebar');
+          DOMElements.modalDetalleTramite = document.getElementById('modalDetalleTramite');
+          DOMElements.modalDetalleTramiteTitulo = document.getElementById('modalDetalleTramiteTitulo');
+          DOMElements.modalDetalleTramiteContenido = document.getElementById('modalDetalleTramiteContenido');
+          DOMElements.modalDetalleAdminActions = document.getElementById('modalDetalleAdminActions');
+          DOMElements.modalReporteDetalle = document.getElementById('modalReporteDetalle');
+          DOMElements.reporteDetallePlantilla = document.getElementById('reporteDetallePlantilla');
+      },
+
+      /**
+       * Actualiza la sección de información del usuario en la barra lateral (sidebar)
+       * con el nombre y rol (o número de control para estudiantes) del usuario actual.
+       */
+      updateUserInfoSidebar() {
+          if (AppState.DOMElements.userInfoSidebar && AppState.usuario) {
+              const user = AppState.usuario;
+              const userIdentifier = user.rolKey === 'ESTUDIANTE' ? `No. Control: ${user.numControl}` : `Rol: ${AppState.ROLES[user.rolKey]}`;
+              AppState.DOMElements.userInfoSidebar.innerHTML = `
+                  <p class="text-sm font-medium truncate" title="${user.nombreCompleto}">Usuario: <span style="color: var(--dci-morado);">${user.nombreCompleto}</span></p>
+                  <p class="text-xs text-dci-accent">${userIdentifier}</p>`;
+          }
+      },
+
+      /**
+       * Construye los enlaces de navegación (botones) en la barra lateral.
+       * Filtra los módulos visibles según el rol del usuario logueado,
+       * basándose en la configuración definida en `AppState.NAV_CONFIG`.
+       */
+      buildSidebar() {
+          AppState.DOMElements.sideNav.innerHTML = ''; // Limpia enlaces anteriores
+          AppState.NAV_CONFIG.forEach(item => {
+              // Verifica que haya un usuario y que su rol esté incluido en los roles permitidos para este item de navegación
+              if (AppState.usuario && AppState.usuario.rolKey && item.roles.includes(AppState.usuario.rolKey)) {
+                  const button = document.createElement('button');
+                  button.dataset.mod = item.id; // ID del módulo para la navegación
+                  button.className = 'sidebar-link w-full text-left flex items-center py-1.5 px-3 rounded-md transition';
+                  button.innerHTML = `<ion-icon name="${item.icon}" class="text-xl mr-3 flex-shrink-0"></ion-icon><span class="sidebar-text">${item.label}</span>`;
+                  AppState.DOMElements.sideNav.appendChild(button);
+              }
+          });
+      },
+
+      /**
+       * Controla la acción de colapsar o expandir la barra lateral.
+       * Cambia el icono del botón de colapso correspondientemente.
+       */
+      handleCollapseSidebar(){
+          AppState.DOMElements.sidebar.classList.toggle('sidebar-collapsed');
+          const isCollapsed = AppState.DOMElements.sidebar.classList.contains('sidebar-collapsed');
+          AppState.DOMElements.collapseIcon.setAttribute('name', isCollapsed ? 'chevron-forward-outline' : 'chevron-back-outline');
+      },
+
+      /**
+       * Alterna entre el tema visual oscuro y claro de la aplicación.
+       * Guarda la preferencia del usuario en localStorage para persistencia.
+       * Vuelve a renderizar la aplicación para aplicar los cambios visuales.
+       */
+      handleModeToggle(){
+          AppState.temaOscuro = !AppState.temaOscuro; // Invierte el estado del tema
+          document.body.className = AppState.temaOscuro ? 'dark-mode' : 'light-mode'; // Aplica la clase CSS al body
+          localStorage.setItem('cecytemTheme', AppState.temaOscuro ? 'dark' : 'light'); // Guarda la preferencia
+          AppRenderer.render(); // Re-renderiza para que los componentes se actualicen si es necesario
+      },
+
+      /**
+       * Aplica el tema visual (oscuro o claro) al cargar la aplicación.
+       * Lee la preferencia guardada en localStorage; si no existe, usa el tema oscuro por defecto.
+       */
+      applyInitialTheme() {
+          const savedTheme = localStorage.getItem('cecytemTheme');
+          AppState.temaOscuro = savedTheme ? (savedTheme === 'dark') : true; // Default oscuro si no hay preferencia
+          document.body.className = AppState.temaOscuro ? 'dark-mode' : 'light-mode';
+      },
+
+      /**
+       * Muestra un mensaje toast (notificación flotante temporal) en la pantalla.
+       * @param {string} txt - El texto del mensaje a mostrar.
+       * @param {string} [type='info'] - El tipo de toast ('info', 'ok', 'error', 'alerta'). Define el color y el icono.
+       */
+      showToast(txt, type = 'info'){
+          // Define los estilos y iconos para cada tipo de toast
+          let c = { info: "bg-[var(--dci-morado)] text-[var(--dci-texto-oscuro)]", ok: "bg-[var(--dci-ok)] text-[var(--dci-oscuro)]", error:"bg-[var(--dci-error)] text-[var(--dci-texto-oscuro)]", alerta:"bg-[var(--dci-alerta)] text-[var(--dci-oscuro)]"};
+          let icon = { info: "information-circle-outline", ok: "checkmark-circle-outline", error: "alert-circle-outline", alerta: "warning-outline"};
+          
+          let el = document.createElement('div'); // Crea el elemento del toast
+          el.className = `toast flex items-center px-4 py-3 rounded-lg shadow-xl text-sm ${c[type]} module-anim`; // Aplica clases de estilo y animación
+          el.innerHTML = `<ion-icon name="${icon[type]}" class="text-xl mr-2"></ion-icon><span>${txt}</span>`; // Añade icono y texto
+          
+          AppState.DOMElements.toastsContainer.appendChild(el); // Añade el toast al contenedor
+          
+          // Añade la animación de desaparición si no existe
+          const style = document.getElementById('toast-fadeout-style') || document.createElement('style');
+          if(!style.id) {
+              style.id = 'toast-fadeout-style';
+              style.innerHTML = `@keyframes fadeout { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(20px); } }`;
+              document.head.appendChild(style);
+          }
+          // Configura el tiempo para que el toast desaparezca
+          setTimeout(()=>{ 
+              el.style.animation = 'fadeout .3s forwards'; // Inicia animación de salida
+              setTimeout(()=>el.remove(),300); // Elimina el elemento del DOM después de la animación
+          },3500);
+      },
+
+      /**
+       * Abre un modal (ventana emergente) específico.
+       * @param {string} modalId - El ID del elemento HTML del modal que se va a abrir.
+       * @param {object} [data=null] - Datos opcionales que se pueden pasar al modal para su inicialización o para prellenar campos.
+       */
+      openModal(modalId, data = null) {
+          const modal = document.getElementById(modalId);
+          if (modal) {
+              modal.classList.remove('hidden'); // Hace visible el modal
+              modal.classList.add('flex');    // Usa flex para centrarlo (generalmente)
+          }
+
+          // Lógica específica para el modal de alta de usuario
+          if (modalId === 'modalAltaUsuario') {
+              document.getElementById('formAltaUsuario')?.reset(); // Resetea el formulario
+              const rolSelect = document.getElementById('altaRol');
+              if (rolSelect) {
+                  rolSelect.innerHTML = ''; // Limpia opciones anteriores del select de roles
+                  // Puebla el select con los roles disponibles para alta
+                  AppState.ROL_KEYS_PARA_ALTA.forEach(rolKey => {
+                      const option = document.createElement('option');
+                      option.value = rolKey; 
+                      option.textContent = AppState.ROLES[rolKey]; 
+                      rolSelect.appendChild(option);
+                  });
+                  if (rolSelect.options.length > 0) rolSelect.value = 'ESTUDIANTE'; // Rol por defecto
+              }
+              // Controla la visibilidad del campo 'carrera' basado en el rol seleccionado
+              const altaCarreraDiv = document.getElementById('altaCarrera').closest('.relative');
+              rolSelect.onchange = function() {
+                  if (this.value === 'ESTUDIANTE') altaCarreraDiv.style.display = 'block';
+                  else { altaCarreraDiv.style.display = 'none'; document.getElementById('altaCarrera').value = '';}
+              };
+              rolSelect.dispatchEvent(new Event('change')); // Dispara el evento para estado inicial
+              
+              // Asegura que el modal esté configurado para "crear" y no "editar"
+              document.getElementById('altaNumControl').readOnly = false;
+              document.getElementById('altaNumControl').classList.remove("opacity-70", "cursor-not-allowed");
+              document.getElementById('altaContrasena').placeholder = "Mínimo 4 caracteres";
+              document.getElementById('altaConfirmarContrasena').placeholder = "Repite tu contraseña";
+              const modalTitulo = document.querySelector('#modalAltaUsuario h2');
+              if(modalTitulo) modalTitulo.textContent = "Crear Cuenta";
+              const submitButton = document.querySelector('#formAltaUsuario button[type="submit"]');
+              if(submitButton) submitButton.textContent = "Crear mi Cuenta";
+              // Asigna el manejador de submit para crear nuevos usuarios
+              AppState.DOMElements.formAltaUsuario.onsubmit = AuthManager.handleAltaUsuarioSubmit;
+
+          // Lógica específica para el modal de detalle de trámite
+          } else if (modalId === 'modalDetalleTramite' && data) {
+              AppState.DOMElements.modalDetalleTramiteTitulo.textContent = data.titulo || "Detalle";
+              AppState.DOMElements.modalDetalleTramiteContenido.innerHTML = data.contenidoHtml || "<p>No hay detalles disponibles.</p>";
+              
+              const adminActionsContainer = AppState.DOMElements.modalDetalleAdminActions;
+              adminActionsContainer.innerHTML = ''; // Limpia acciones de admin previas
+              adminActionsContainer.classList.add('hidden');
+
+              // Si el usuario es ADMIN y hay acciones definidas para él, las muestra
+              if (AppState.usuario.rolKey === 'ADMIN' && data.adminActions && data.adminActions.length > 0) {
+                  data.adminActions.forEach(action => {
+                      const button = document.createElement('button');
+                      button.textContent = action.label;
+                      button.className = `px-3 py-1.5 rounded-md text-sm ${action.class || 'btn-main'}`;
+                      button.onclick = () => { action.handler(); this.closeModal('modalDetalleTramite'); };
+                      adminActionsContainer.appendChild(button);
+                  });
+                  adminActionsContainer.classList.remove('hidden');
+              }
+          // Lógica específica para el modal de reporte/impresión
+          } else if (modalId === 'modalReporteDetalle' && data) {
+               AppState.DOMElements.reporteDetallePlantilla.innerHTML = data.contenidoHtml || "<p>No hay contenido para el reporte.</p>";
+          }
+      },
+      /**
+       * Cierra un modal específico ocultándolo.
+       * @param {string} modalId - El ID del elemento HTML del modal que se va a cerrar.
+       */
+      closeModal(modalId) {
+          const modal = document.getElementById(modalId);
+          if (modal) {
+              modal.classList.add('hidden');
+              modal.classList.remove('flex');
+          }
+      },
+    };
+
+    // =================================================================================
+    //  GESTOR DE AUTENTICACIÓN (AuthManager)
+    //  Maneja el inicio de sesión, cierre de sesión, registro de nuevos usuarios y
+    //  la gestión general de la sesión del usuario.
+    // =================================================================================
+    const AuthManager = {
+      /**
+       * Procesa el envío del formulario de inicio de sesión.
+       * Valida las credenciales del usuario contra la lista de usuarios registrados.
+       * Si son válidas, inicia la sesión y la aplicación.
+       * Si no, muestra un mensaje de error.
+       * @param {Event} e - El objeto evento del formulario (submit).
+       */
+      handleLoginSubmit(e) {
+        e.preventDefault(); // Evita el envío tradicional del formulario
+        const numControlInput = document.getElementById('loginNumControl').value.trim();
+        const passwordInput = document.getElementById('loginContrasena').value;
+        // Busca el usuario en la lista de usuarios registrados
+        const foundUser = AppState.usuariosRegistrados.find(
+          user => user.numControl.toLowerCase() === numControlInput.toLowerCase() && user.password === passwordInput
+        );
+        if (foundUser) {
+          AppState.usuario = { ...foundUser }; // Establece el usuario actual en el estado de la app
+          sessionStorage.setItem('cecytemUser', JSON.stringify(AppState.usuario)); // Guarda el usuario en sessionStorage
+          AppLogic.inicializarDatosDemo(); // Carga datos de demo si es necesario
+          AppCore.initApp(); // Inicia la aplicación principal
+        } else {
+          UIManager.showToast('Número de Control/Usuario o Contraseña incorrectos', 'error');
+        }
+      },
+
+      /**
+       * Procesa el envío del formulario de alta de nuevos usuarios (estudiantes o administradores).
+       * Realiza validaciones de los campos, y si son correctos, añade el nuevo usuario
+       * a la lista de usuarios registrados y lo guarda en localStorage.
+       * @param {Event} e - El objeto evento del formulario (submit).
+       */
+      handleAltaUsuarioSubmit(e) {
+          e.preventDefault();
+          const nombreCompleto = document.getElementById('altaNombreCompleto').value.trim();
+          const nuevoNumControl = document.getElementById('altaNumControl').value.trim();
+          const carrera = document.getElementById('altaCarrera').value;
+          const rolSeleccionadoKey = document.getElementById('altaRol').value;
+          const nuevaContrasena = document.getElementById('altaContrasena').value;
+          const confirmarContrasena = document.getElementById('altaConfirmarContrasena').value;
+
+          // Validaciones básicas
+          if (!nombreCompleto || !nuevoNumControl || !rolSeleccionadoKey || !nuevaContrasena) {
+              UIManager.showToast('Todos los campos son requeridos (excepto carrera para Admin).', 'alerta'); return;
+          }
+          if (rolSeleccionadoKey === 'ESTUDIANTE' && !carrera) { 
+              UIManager.showToast('La carrera es requerida para estudiantes.', 'alerta'); return; 
+          }
+          if (nuevaContrasena.length < 4) { 
+              UIManager.showToast('La contraseña debe tener al menos 4 caracteres.', 'alerta'); return; 
+          }
+          if (nuevaContrasena !== confirmarContrasena) { 
+              UIManager.showToast('Las contraseñas no coinciden.', 'error'); return; 
+          }
+          // Verifica si el número de control/usuario ya existe
+          if (AppState.usuariosRegistrados.find(user => user.numControl.toLowerCase() === nuevoNumControl.toLowerCase())) { 
+              UIManager.showToast('Este Número de Control/Usuario ya está registrado.', 'error'); return; 
+          }
+
+          // Crea y añade el nuevo usuario
+          AppState.usuariosRegistrados.push({
+              numControl: nuevoNumControl, password: nuevaContrasena, nombreCompleto: nombreCompleto,
+              carrera: rolSeleccionadoKey === 'ESTUDIANTE' ? carrera : null,
+              datosCorrectos: true, // Asume datos correctos para nuevos registros
+              rolKey: rolSeleccionadoKey
+          });
+          AppState.saveToLocalStorage('cecytem_usuarios', AppState.usuariosRegistrados); // Guarda la lista actualizada
+
+          UIManager.showToast(`¡Cuenta para "${nombreCompleto}" (${AppState.ROLES[rolSeleccionadoKey]}) registrada! Ya puedes iniciar sesión.`, 'ok');
+          UIManager.closeModal('modalAltaUsuario');
+          // Pre-llena el formulario de login para facilitar el acceso inmediato
+          document.getElementById('loginNumControl').value = nuevoNumControl;
+          document.getElementById('loginContrasena').value = "";
+          document.getElementById('loginContrasena').focus();
+      },
+
+      /**
+       * Cierra la sesión del usuario actual.
+       * Elimina la información del usuario de sessionStorage, restablece el estado `AppState.usuario` a `null`,
+       * y muestra la pantalla de inicio de sesión.
+       */
+      logout() {
+          AppState.usuario = null;
+          sessionStorage.removeItem('cecytemUser');
+          AppState.DOMElements.appContainer.style.display = "none"; // Oculta el contenedor principal de la app
+          AppState.DOMElements.loginScreen.style.display = "flex";  // Muestra la pantalla de login
+          if (AppState.DOMElements.sideNav) AppState.DOMElements.sideNav.innerHTML = ''; // Limpia el sidebar
+          UIManager.showToast('Sesión cerrada', 'info');
+      },
+
+      /**
+       * Verifica si existe una sesión de usuario activa (guardada en sessionStorage) al cargar la página.
+       * Si existe, restaura el estado del usuario y procede a iniciar la aplicación.
+       * Si no, se asegura de que se muestre la pantalla de inicio de sesión.
+       */
+      checkSession() {
+          const storedUser = sessionStorage.getItem('cecytemUser');
+          if (storedUser) {
+              AppState.usuario = JSON.parse(storedUser);
+              AppLogic.inicializarDatosDemo(); // Carga datos de demo si es necesario para este usuario
+              AppCore.initApp(); // Inicia la aplicación principal
+          } else {
+              // Asegura que la app no se muestre y el login sí
+              AppState.DOMElements.appContainer.style.display = "none";
+              AppState.DOMElements.loginScreen.style.display = "flex";
+          }
+      },
+      /**
+       * Restablece todos los datos persistentes de la aplicación (usuarios, solicitudes, pagos, notificaciones)
+       * a sus valores por defecto. Esto es útil para propósitos de demostración o para empezar de cero.
+       * Solicita confirmación al usuario antes de proceder, ya que es una acción destructiva.
+       * Al finalizar, cierra la sesión y recarga la página.
+       */
+      resetDemoData() {
+          if (confirm('¿Estás seguro de que quieres restablecer todos los datos del demo? Esto incluye usuarios, solicitudes, pagos y notificaciones. Se cerrará tu sesión.')) {
+              localStorage.removeItem('cecytem_usuarios');
+              localStorage.removeItem('cecytem_solicitudes');
+              localStorage.removeItem('cecytem_pagos');
+              localStorage.removeItem('cecytem_notificaciones');
+              localStorage.removeItem('cecytemTheme'); // Opcional: también resetea la preferencia de tema
+              sessionStorage.removeItem('cecytemUser'); // Cierra la sesión actual
+              UIManager.showToast('Datos del demo restablecidos. La página se recargará.', 'ok');
+              setTimeout(() => location.reload(), 1500); // Recarga la página después de un breve retraso
+          }
+      }
+    };
+
+    // =================================================================================
+    //  LÓGICA DE LA APLICACIÓN (AppLogic)
+    //  Contiene las funciones que implementan la lógica de negocio específica del portal,
+    //  como la gestión de solicitudes de documentos, pagos, notificaciones, y
+    //  la interacción con los datos del `AppState`.
+    // =================================================================================
+    const AppLogic = {
+      /**
+       * Carga o añade datos de demostración para ciertos usuarios (CECYTEM001, CECYTEM002).
+       * Esto es útil para tener contenido preexistente al probar la aplicación.
+       * Solo añade datos si no existen ya para ese usuario, para evitar duplicados.
+       */
+      inicializarDatosDemo() { 
+        if (!AppState.usuario) return; 
+        const esEstudiante1 = AppState.usuario.rolKey === 'ESTUDIANTE' && AppState.usuario.numControl === 'CECYTEM001';
+        const esEstudiante2 = AppState.usuario.rolKey === 'ESTUDIANTE' && AppState.usuario.numControl === 'CECYTEM002';
+
+        // Datos de demo para el estudiante CECYTEM001
+        if (esEstudiante1) {
+            const userSolicitudes = AppState.solicitudesDocumentos.filter(s => s.idEstudiante === 'CECYTEM001');
+            // Añade solicitud de constancia si no existe
+            if (!userSolicitudes.find(s => s.id === 1)) { 
+                AppState.solicitudesDocumentos.push({ 
+                    id: 1, idEstudiante: 'CECYTEM001', nombreEstudiante: 'Brandon Guzmán', 
+                    tipoDocumentoId: 'constancia', fechaSolicitud: new Date(Date.now() - 86400000 * 2).toISOString(), 
+                    estado: 'Pago en Revisión', costo: 50.00, pagado: true, pagoSimulado: true, pagoAutorizado: false, 
+                    archivoUrl: null, observacionesAdmin: 'Verificando historial académico.' 
+                }); 
+            }
+            // Añade solicitud de kárdex si no existe
+            if (!userSolicitudes.find(s => s.id === 2)) { 
+                AppState.solicitudesDocumentos.push({ 
+                    id: 2, idEstudiante: 'CECYTEM001', nombreEstudiante: 'Brandon Guzmán', 
+                    tipoDocumentoId: 'kardex', fechaSolicitud: new Date(Date.now() - 86400000 * 5).toISOString(), 
+                    estado: 'Entregado', costo: 30.00, pagado: true, pagoSimulado: true, pagoAutorizado:true, 
+                    archivoUrl: `javascript:AppLogic.generarYMostrarDocumentoSolicitado(2)`, // URL simulada para generar PDF
+                    observacionesAdmin: 'Documento generado.' 
+                });
+            }
+            // Añade historial de pago para la constancia si no existe
+            if (!AppState.historialPagos.find(p => p.idSolicitud === 1 && p.idEstudiante === 'CECYTEM001')) { 
+                AppState.historialPagos.push({ 
+                    id: AppState.historialPagos.length + 1, idEstudiante: 'CECYTEM001', idSolicitud: 1, 
+                    concepto: 'Pago de Constancia de Estudios', monto: 50.00, 
+                    fechaPago: new Date(Date.now() - 86400000 * 2).toISOString(), 
+                    estadoPago: 'En Revisión Admin', metodoPago: 'Tarjeta (Simulado)', 
+                    referencia: `PAYCECY${String(Date.now()).slice(-6)}` 
+                }); 
+            }
+            // Añade historial de pago para el kárdex si no existe
+            if (!AppState.historialPagos.find(p => p.idSolicitud === 2 && p.idEstudiante === 'CECYTEM001')) { 
+                AppState.historialPagos.push({ 
+                    id: AppState.historialPagos.length + 1, idEstudiante: 'CECYTEM001', idSolicitud: 2, 
+                    concepto: 'Pago de Kárdex Oficial', monto: 30.00, 
+                    fechaPago: new Date(Date.now() - 86400000 * 4).toISOString(), 
+                    estadoPago: 'Aceptado', metodoPago: 'Tarjeta Débito **** 1234', referencia: 'PAYCECY001' 
+                }); 
+            }
+            // Añade notificaciones de demo para el estudiante 1 si tiene menos de 3
+            if (AppState.notificaciones.filter(n => n.idEstudiante === 'CECYTEM001').length < 3) { 
+                AppState.notificaciones.push( 
+                    { id: AppState.notificaciones.length + 1, idEstudiante: 'CECYTEM001', mensaje: 'Tu pago de Constancia (Folio #1) está en revisión por un administrador.', fecha: new Date(Date.now() - 86400000 * 2).toISOString(), leida: false, tipo: 'info' }, 
+                    { id: AppState.notificaciones.length + 2, idEstudiante: 'CECYTEM001', mensaje: 'Pago de Kárdex (Folio #2) Aceptado.', fecha: new Date(Date.now() - 86400000 * 4).toISOString(), leida: true, tipo: 'ok' }, 
+                    { id: AppState.notificaciones.length + 3, idEstudiante: 'CECYTEM001', mensaje: 'Kárdex (Folio #2) listo para descargar.', fecha: new Date(Date.now() - 86400000 * 3).toISOString(), leida: true, tipo: 'ok', accionUrl: `javascript:AppLogic.generarYMostrarDocumentoSolicitado(2)` }
+                ); 
+            }
+        // Datos de demo para el estudiante CECYTEM002
+        } else if (esEstudiante2) {
+             if (!AppState.solicitudesDocumentos.find(s => s.id === 3 && s.idEstudiante === 'CECYTEM002')) { 
+                AppState.solicitudesDocumentos.push({ 
+                    id: 3, idEstudiante: 'CECYTEM002', nombreEstudiante: 'Ivan Carvajal', 
+                    tipoDocumentoId: 'boleta', fechaSolicitud: new Date(Date.now() - 86400000 * 1).toISOString(), 
+                    estado: 'Pendiente', costo: 0.00, pagado: true, pagoSimulado:true, pagoAutorizado: true, 
+                    archivoUrl: null, observacionesAdmin: 'En espera de cierre de calificaciones.' 
+                }); 
+            }
+             if (AppState.notificaciones.filter(n => n.idEstudiante === 'CECYTEM002').length < 1) { 
+                AppState.notificaciones.push({ 
+                    id: AppState.notificaciones.length + 1, idEstudiante: 'CECYTEM002', 
+                    mensaje: 'Solicitud de Boleta (Folio #3) recibida, está Pendiente.', 
+                    fecha: new Date(Date.now() - 86400000 * 1).toISOString(), leida: false, tipo: 'info' 
+                });
+            }
+        }
+        // Guarda todos los cambios hechos en los datos de demo en localStorage
+        AppState.saveToLocalStorage('cecytem_solicitudes', AppState.solicitudesDocumentos);
+        AppState.saveToLocalStorage('cecytem_pagos', AppState.historialPagos);
+        AppState.saveToLocalStorage('cecytem_notificaciones', AppState.notificaciones);
+      },
+
+      /**
+       * Gestiona la solicitud de un nuevo documento por parte de un estudiante.
+       * Verifica la disponibilidad del documento según horario y días.
+       * Si es válido, crea un nuevo registro de solicitud, lo guarda y notifica al estudiante.
+       * Si el documento tiene costo, redirige al estudiante a la sección de pagos.
+       * @param {string} tipoDocId - El ID del tipo de documento que se está solicitando (ej. 'constancia', 'kardex').
+       * @param {number} costo - El costo asociado al documento.
+       */
+      solicitarDocumento(tipoDocId, costo) { 
+        const docInfo = AppState.tiposDocumento.find(d => d.id === tipoDocId);
+        if (!docInfo) { UIManager.showToast('Tipo de documento no válido.', 'error'); return; }
+        
+        // Validación de disponibilidad (horario y días)
+        let disponibleAhora = docInfo.disponibleSiempre;
+        if (!docInfo.disponibleSiempre && docInfo.diasDisponibles && docInfo.diasDisponibles.length > 0) { 
+            const ahora = new Date();
+            const horaActual = `${String(ahora.getHours()).padStart(2,'0')}:${String(ahora.getMinutes()).padStart(2,'0')}`;
+            const diaSemanaActualJS = ahora.getDay(); // 0 Domingo, 1 Lunes ...
+            const diaSemanaLogica = diaSemanaActualJS === 0 ? 6 : diaSemanaActualJS - 1; // Lunes 0, Domingo 6
+            if (docInfo.diasDisponibles.includes(diaSemanaLogica) && horaActual >= docInfo.horaInicio && horaActual <= docInfo.horaFin) {
+                disponibleAhora = true;
+            }
+        }
+        if (!disponibleAhora) { 
+            UIManager.showToast(`Solicitud para ${docInfo.nombre} no disponible: ${docInfo.nota}`, 'alerta'); return; 
+        }
+        
+        // Genera un ID único para la nueva solicitud
+        const maxId = AppState.solicitudesDocumentos.length > 0 ? Math.max(...AppState.solicitudesDocumentos.map(s => s.id)) : 0;
+        const nuevaSolicitud = {
+            id: maxId + 1, 
+            idEstudiante: AppState.usuario.numControl, 
+            nombreEstudiante: AppState.usuario.nombreCompleto, // Guarda el nombre para referencia del admin
+            tipoDocumentoId: tipoDocId, 
+            fechaSolicitud: new Date().toISOString(), 
+            estado: costo > 0 ? 'Pendiente de Pago' : 'En Revisión', // Estado inicial
+            costo: costo, 
+            pagado: costo === 0, // Si es gratuito, se marca como pagado
+            pagoSimulado: false,    // Indica si el estudiante ya intentó pagar
+            pagoAutorizado: costo === 0, // Si es gratuito, el pago se considera autorizado
+            archivoUrl: null,       // URL del documento final (se asignará después)
+            observacionesAdmin: ''  // Observaciones del administrador
+        };
+        AppState.solicitudesDocumentos.push(nuevaSolicitud); // Añade la solicitud a la lista
+        AppState.saveToLocalStorage('cecytem_solicitudes', AppState.solicitudesDocumentos); // Guarda en localStorage
+
+        // Genera una notificación para el estudiante
+        const maxNotifId = AppState.notificaciones.length > 0 ? Math.max(...AppState.notificaciones.map(n => n.id)) : 0;
+        AppState.notificaciones.unshift({ // unshift para añadir al inicio (más recientes primero)
+            id: maxNotifId + 1, 
+            idEstudiante: AppState.usuario.numControl,
+            mensaje: `Solicitud para ${docInfo.nombre} (Folio #${nuevaSolicitud.id}) recibida. Estado: ${nuevaSolicitud.estado}.`,
+            fecha: new Date().toISOString(), 
+            leida: false, 
+            tipo: 'info'
+        });
+        // Si el documento es gratuito, notifica también a los administradores
+        if (costo === 0) {
+            AppState.usuariosRegistrados.filter(u => u.rolKey === 'ADMIN').forEach(admin => {
+                AppState.notificaciones.unshift({ 
+                    id: AppState.notificaciones.length + 1, 
+                    idEstudiante: admin.numControl, // La notificación es para el admin
+                    mensaje: `Nueva solicitud gratuita de ${docInfo.nombre} (Folio #${nuevaSolicitud.id}) por ${AppState.usuario.nombreCompleto}.`, 
+                    fecha: new Date().toISOString(), 
+                    leida: false, 
+                    tipo: 'info', 
+                    esParaAdmin: true, // Marca la notificación como específica para admin
+                    accionModulo: 'adminGestionSolicitudes' // Sugiere al admin ir a este módulo
+                });
+            });
+        }
+        AppState.saveToLocalStorage('cecytem_notificaciones', AppState.notificaciones); // Guarda las notificaciones
+
+        UIManager.showToast(`Solicitud para ${docInfo.nombre} enviada.`, 'ok');
+        // Si tiene costo, informa y redirige a la pantalla de pagos
+        if (costo > 0) { 
+            UIManager.showToast(`Recuerda realizar el pago de $${costo.toFixed(2)} MXN.`, 'alerta'); 
+            setTimeout(() => AppCore.go('realizarPagos'), 500); // Pequeño retraso antes de redirigir
+        }
+        AppRenderer.render(); // Actualiza la vista actual
+      },
+      
+      /**
+       * Simula el proceso de un estudiante realizando un pago para una solicitud de documento.
+       * Actualiza el estado de la solicitud a 'Pago en Revisión' y crea un registro en el historial de pagos.
+       * Notifica al estudiante sobre el envío del pago y al administrador sobre la necesidad de autorización.
+       * @param {Event} event - El objeto evento del formulario de pago.
+       * @param {number} solicitudId - El ID de la solicitud de documento para la cual se está realizando el pago.
+       */
+      simularPagoEstudiante(event, solicitudId) {
+        event.preventDefault(); // Evita el envío normal del formulario
+        // Busca la solicitud correspondiente al estudiante actual
+        const solicitudIndex = AppState.solicitudesDocumentos.findIndex(s => s.id === solicitudId && s.idEstudiante === AppState.usuario.numControl);
+        if (solicitudIndex === -1) { 
+            UIManager.showToast('Error: Solicitud no encontrada.', 'error'); 
+            return; 
+        }
+        const solicitud = AppState.solicitudesDocumentos[solicitudIndex];
+        
+        UIManager.showToast('Procesando pago...', 'info'); // Feedback visual para el usuario
+        
+        setTimeout(() => { // Simula un retraso de procesamiento
+            solicitud.pagoSimulado = true; // Marca que el estudiante intentó pagar
+            solicitud.pagado = true;      // Considera pagado a nivel de simulación del estudiante
+            solicitud.estado = 'Pago en Revisión'; // El pago ahora debe ser autorizado por un admin
+            AppState.saveToLocalStorage('cecytem_solicitudes', AppState.solicitudesDocumentos);
+
+            const docInfo = AppState.tiposDocumento.find(d => d.id === solicitud.tipoDocumentoId);
+            // Crea un registro en el historial de pagos
+            const maxPagoId = AppState.historialPagos.length > 0 ? Math.max(...AppState.historialPagos.map(p => p.id)) : 0;
+            AppState.historialPagos.push({ 
+                id: maxPagoId + 1, 
+                idEstudiante: AppState.usuario.numControl, 
+                idSolicitud: solicitud.id, 
+                concepto: `Pago de ${docInfo.nombre}`, 
+                monto: solicitud.costo, 
+                fechaPago: new Date().toISOString(), 
+                estadoPago: 'En Revisión Admin', // El pago específico está pendiente de revisión
+                metodoPago: 'Tarjeta (Simulado)', 
+                referencia: `PAYCECY${String(Date.now()).slice(-6)}` // Referencia de pago simulada
+            });
+            AppState.saveToLocalStorage('cecytem_pagos', AppState.historialPagos);
+
+            // Notificación para el estudiante
+            const maxNotifId = AppState.notificaciones.length > 0 ? Math.max(...AppState.notificaciones.map(n => n.id)) : 0;
+            AppState.notificaciones.unshift({ 
+                id: maxNotifId + 1, 
+                idEstudiante: AppState.usuario.numControl, 
+                mensaje: `Tu pago para ${docInfo.nombre} (Folio #${solicitud.id}) por $${solicitud.costo.toFixed(2)} MXN ha sido enviado para autorización.`, 
+                fecha: new Date().toISOString(), 
+                leida: false, 
+                tipo: 'info' 
+            });
+            // Notificación para todos los administradores
+            AppState.usuariosRegistrados.filter(u => u.rolKey === 'ADMIN').forEach(admin => { 
+                AppState.notificaciones.unshift({ 
+                    id: AppState.notificaciones.length + 1, 
+                    idEstudiante: admin.numControl, 
+                    mensaje: `Nuevo pago de ${AppState.usuario.nombreCompleto} para ${docInfo.nombre} (Folio #${solicitud.id}) requiere autorización.`, 
+                    fecha: new Date().toISOString(), 
+                    leida: false, 
+                    tipo: 'alerta', 
+                    esParaAdmin: true, 
+                    accionModulo: 'adminAutorizarPagos' 
+                }); 
+            });
+            AppState.saveToLocalStorage('cecytem_notificaciones', AppState.notificaciones);
+
+            UIManager.showToast('¡Pago enviado para autorización!', 'ok');
+            AppRenderer.render(); // Actualiza la vista
+        }, 1500); // Fin del setTimeout
+      },
+      
+      /**
+       * Marca una notificación como leída.
+       * Solo afecta a las notificaciones del usuario actual o, si es admin, a las que son para administradores.
+       * @param {number} id - El ID de la notificación a marcar.
+       */
+      marcarNotificacionComoLeida(id) { 
+        const nIndex = AppState.notificaciones.findIndex(n => 
+            n.id === id && 
+            (n.idEstudiante === AppState.usuario.numControl || (AppState.usuario.rolKey === 'ADMIN' && n.esParaAdmin))
+        ); 
+        if(nIndex !== -1){ 
+            AppState.notificaciones[nIndex].leida=true; 
+            AppState.saveToLocalStorage('cecytem_notificaciones', AppState.notificaciones); 
+            AppRenderer.render(); 
+        } 
+      },
+      /**
+       * Marca todas las notificaciones visibles para el usuario actual como leídas.
+       */
+      marcarTodasComoLeidas() { 
+        AppState.notificaciones.forEach(n => { 
+            if ((AppState.usuario.rolKey === 'ADMIN' && (n.esParaAdmin || n.idEstudiante === AppState.usuario.numControl)) || 
+                (AppState.usuario.rolKey !== 'ADMIN' && n.idEstudiante === AppState.usuario.numControl && !n.esParaAdmin)) { 
+                n.leida=true; 
+            } 
+        });
+        AppState.saveToLocalStorage('cecytem_notificaciones', AppState.notificaciones); 
+        UIManager.showToast('Notificaciones marcadas como leídas.','ok'); 
+        AppRenderer.render(); 
+      },
+      
+      /**
+       * Guarda los cambios realizados por el usuario en su perfil (nombre, carrera si es estudiante).
+       * Actualiza tanto la sesión actual como la lista persistente de usuarios.
+       */
+      guardarPerfil() { 
+        const nombre = document.getElementById('perfilNombre').value;
+        const carreraInput = document.getElementById('perfilCarrera'); // Puede no existir para Admin
+        const carrera = carreraInput ? carreraInput.value : AppState.usuario.carrera;
+        
+        // Actualiza el objeto de usuario en la sesión actual
+        AppState.usuario.nombreCompleto=nombre;
+        if (AppState.usuario.rolKey === 'ESTUDIANTE') AppState.usuario.carrera = carrera;
+        sessionStorage.setItem('cecytemUser',JSON.stringify(AppState.usuario));
+        
+        // Actualiza el usuario en la lista persistente de usuariosRegistrados
+        const studentIndex = AppState.usuariosRegistrados.findIndex(est => est.numControl === AppState.usuario.numControl);
+        if (studentIndex !== -1) { 
+            AppState.usuariosRegistrados[studentIndex].nombreCompleto = nombre; 
+            if (AppState.usuario.rolKey === 'ESTUDIANTE') AppState.usuariosRegistrados[studentIndex].carrera = carrera; 
+            AppState.saveToLocalStorage('cecytem_usuarios', AppState.usuariosRegistrados); 
+        }
+        UIManager.updateUserInfoSidebar(); // Actualiza la UI del sidebar
+        UIManager.showToast('Perfil actualizado.','ok');
+      },
+      /**
+       * Simula el guardado de configuraciones de la aplicación (ej. preferencias de email).
+       * En esta simulación, solo muestra un toast.
+       */
+      guardarConfigApp() { 
+          const ne = document.getElementById('configNotifEmail').value; 
+          UIManager.showToast(`Preferencia email: ${ne==='si'?'Activadas':'Desactivadas'} (sim).`,'ok');
+      },
+      
+      // --- Lógica Específica de Administrador ---
+      /**
+       * Guarda los cambios que un administrador realiza sobre una solicitud de documento.
+       * Esto puede incluir cambiar el estado, adjuntar un archivo (URL simulada) o añadir observaciones.
+       * Notifica al estudiante sobre los cambios.
+       * @param {number} solicitudId - El ID de la solicitud que se está modificando.
+       */
+      guardarCambiosSolicitudAdmin(solicitudId) { 
+        const solicitudIndex = AppState.solicitudesDocumentos.findIndex(s => s.id === solicitudId);
+        if (solicitudIndex === -1) { UIManager.showToast('Error al guardar: Solicitud no encontrada.', 'error'); return; }
+        
+        const solicitud = AppState.solicitudesDocumentos[solicitudIndex];
+        const nuevoEstado = document.getElementById('adminNuevoEstadoSolicitud').value;
+        const archivoUrl = document.getElementById('adminArchivoUrl').value.trim();
+        const observaciones = document.getElementById('adminObservaciones').value.trim();
+        const docInfo = AppState.tiposDocumento.find(d => d.id === solicitud.tipoDocumentoId);
+
+        if (nuevoEstado === "Rechazado" && !observaciones) {
+            UIManager.showToast('Si rechazas una solicitud, por favor añade una observación para el estudiante.', 'alerta');
+            return;
+        }
+
+        solicitud.estado = nuevoEstado; 
+        solicitud.archivoUrl = archivoUrl || null; 
+        solicitud.observacionesAdmin = observaciones;
+        
+        // Prepara la notificación para el estudiante
+        let notificacionEstudianteMsg = `El estado de tu solicitud de ${docInfo.nombre} (Folio #${solicitud.id}) ha cambiado a: ${nuevoEstado}.`;
+        let notificacionTipo = 'info';
+        let accionUrlParaNotif = null; // Para notificaciones que llevan a una acción (ej. descargar)
+
+        if (nuevoEstado === "Entregado" && archivoUrl) { 
+            notificacionEstudianteMsg = `Tu ${docInfo.nombre} (Folio #${solicitud.id}) está listo y adjunto.`; 
+            notificacionTipo = 'ok'; 
+            // Crea una URL de acción que, al ser clickeada en la notificación, llamará a la función para generar el PDF.
+            accionUrlParaNotif = `javascript:AppLogic.generarYMostrarDocumentoSolicitado(${solicitud.id})`;
+        } else if (nuevoEstado === "Listo para Entrega") {
+             notificacionEstudianteMsg = `Tu ${docInfo.nombre} (Folio #${solicitud.id}) está listo para entrega/descarga.`;
+             notificacionTipo = 'ok';
+             if (archivoUrl) accionUrlParaNotif = `javascript:AppLogic.generarYMostrarDocumentoSolicitado(${solicitud.id})`;
+        } else if (nuevoEstado === "Rechazado") {
+            notificacionEstudianteMsg = `Tu solicitud de ${docInfo.nombre} (Folio #${solicitud.id}) fue Rechazada. Motivo: ${observaciones || 'Contacta a Control Escolar'}.`;
+            notificacionTipo = 'error';
+        }
+
+        // Añade la notificación para el estudiante
+        AppState.notificaciones.unshift({ 
+            id: AppState.notificaciones.length + 1, 
+            idEstudiante: solicitud.idEstudiante, 
+            mensaje: notificacionEstudianteMsg, 
+            fecha: new Date().toISOString(), 
+            leida: false, 
+            tipo: notificacionTipo, 
+            accionUrl: accionUrlParaNotif 
+        });
+
+        AppState.saveToLocalStorage('cecytem_solicitudes', AppState.solicitudesDocumentos); 
+        AppState.saveToLocalStorage('cecytem_notificaciones', AppState.notificaciones);
+        UIManager.showToast('Cambios guardados en la solicitud.', 'ok'); 
+        AppRenderer.render(); // Actualiza la vista para reflejar los cambios
+      },
+      /**
+       * Permite a un administrador autorizar un pago que un estudiante ha realizado (simulado).
+       * Cambia el estado de la solicitud a 'En Revisión' y actualiza el estado del pago en el historial.
+       * Notifica al estudiante que su pago fue autorizado.
+       * @param {number} solicitudId - El ID de la solicitud cuyo pago se va a autorizar.
+       */
+      autorizarPagoAdmin(solicitudId) { 
+        const solicitudIndex = AppState.solicitudesDocumentos.findIndex(s => s.id === solicitudId);
+        if (solicitudIndex === -1) { UIManager.showToast('Solicitud no encontrada.', 'error'); return; }
+        
+        const solicitud = AppState.solicitudesDocumentos[solicitudIndex];
+        const docInfo = AppState.tiposDocumento.find(d => d.id === solicitud.tipoDocumentoId);
+
+        solicitud.pagoAutorizado = true; // Marca el pago como autorizado por el admin
+        solicitud.estado = 'En Revisión'; // El siguiente paso es procesar/generar el documento
+        
+        // Actualiza el estado del pago correspondiente en el historial de pagos
+        const pagoHistorialIndex = AppState.historialPagos.findIndex(p => p.idSolicitud === solicitud.id && p.idEstudiante === solicitud.idEstudiante);
+        if (pagoHistorialIndex !== -1) {
+            AppState.historialPagos[pagoHistorialIndex].estadoPago = 'Aceptado';
+        }
+        
+        // Notifica al estudiante
+        AppState.notificaciones.unshift({ 
+            id: AppState.notificaciones.length + 1, 
+            idEstudiante: solicitud.idEstudiante, 
+            mensaje: `¡Tu pago para ${docInfo.nombre} (Folio #${solicitud.id}) ha sido autorizado! La solicitud está ahora "${solicitud.estado}".`, 
+            fecha: new Date().toISOString(), 
+            leida: false, 
+            tipo: 'ok' 
+        });
+
+        AppState.saveToLocalStorage('cecytem_solicitudes', AppState.solicitudesDocumentos); 
+        AppState.saveToLocalStorage('cecytem_pagos', AppState.historialPagos); 
+        AppState.saveToLocalStorage('cecytem_notificaciones', AppState.notificaciones);
+        UIManager.showToast(`Pago para Folio #${solicitud.id} autorizado.`, 'ok'); 
+        AppRenderer.render();
+      },
+      /**
+       * Permite a un administrador rechazar un pago.
+       * Solicita un motivo de rechazo, actualiza el estado de la solicitud a 'Pendiente de Pago'
+       * para que el estudiante pueda reintentar, y notifica al estudiante.
+       * @param {number} solicitudId - El ID de la solicitud cuyo pago se rechaza.
+       */
+      rechazarPagoAdmin(solicitudId) { 
+        const motivoRechazo = prompt("Por favor, ingresa el motivo del rechazo del pago (será visible para el estudiante):");
+        if (motivoRechazo === null) return; // Admin canceló el prompt
+        if (!motivoRechazo.trim()) { 
+            UIManager.showToast("Debes ingresar un motivo para el rechazo.", 'alerta'); return; 
+        }
+
+        const solicitudIndex = AppState.solicitudesDocumentos.findIndex(s => s.id === solicitudId);
+        if (solicitudIndex === -1) { UIManager.showToast('Solicitud no encontrada.', 'error'); return; }
+        
+        const solicitud = AppState.solicitudesDocumentos[solicitudIndex];
+        const docInfo = AppState.tiposDocumento.find(d => d.id === solicitud.tipoDocumentoId);
+
+        // Restablece los estados relacionados con el pago para permitir un nuevo intento
+        solicitud.pagoAutorizado = false; 
+        solicitud.pagoSimulado = false; 
+        solicitud.pagado = false; 
+        solicitud.estado = 'Pendiente de Pago'; // Vuelve a requerir el pago
+        solicitud.observacionesAdmin = `Pago rechazado: ${motivoRechazo}`; // Añade el motivo
+
+        // Actualiza el historial de pagos
+        const pagoHistorialIndex = AppState.historialPagos.findIndex(p => p.idSolicitud === solicitud.id && p.idEstudiante === solicitud.idEstudiante && p.estadoPago === 'En Revisión Admin');
+        if (pagoHistorialIndex !== -1) { 
+            AppState.historialPagos[pagoHistorialIndex].estadoPago = 'Rechazado'; 
+            AppState.historialPagos[pagoHistorialIndex].observaciones = `Rechazado por Admin: ${motivoRechazo}`; 
+        }
+        
+        // Notifica al estudiante
+        AppState.notificaciones.unshift({ 
+            id: AppState.notificaciones.length + 1, 
+            idEstudiante: solicitud.idEstudiante, 
+            mensaje: `Tu pago para ${docInfo.nombre} (Folio #${solicitud.id}) fue rechazado. Motivo: ${motivoRechazo}. Por favor, inténtalo de nuevo o contacta a Control Escolar.`, 
+            fecha: new Date().toISOString(), 
+            leida: false, 
+            tipo: 'error' 
+        });
+
+        AppState.saveToLocalStorage('cecytem_solicitudes', AppState.solicitudesDocumentos); 
+        AppState.saveToLocalStorage('cecytem_pagos', AppState.historialPagos); 
+        AppState.saveToLocalStorage('cecytem_notificaciones', AppState.notificaciones);
+        UIManager.showToast(`Pago para Folio #${solicitud.id} rechazado.`, 'ok'); 
+        AppRenderer.render();
+      },
+      /**
+       * Permite a un administrador editar la información de un usuario existente.
+       * Abre el modal de alta de usuario, pero pre-llena los campos con los datos del usuario a editar.
+       * El número de control/alias no se puede cambiar.
+       * @param {string} numControl - El número de control o alias del usuario a editar.
+       */
+      editarUsuarioAdmin(numControl) {
+        const usuarioAEditar = AppState.usuariosRegistrados.find(u => u.numControl === numControl);
+        if (!usuarioAEditar) { UIManager.showToast("Usuario no encontrado", "error"); return; }
+
+        // Abre el modal de alta, pero se adaptará para edición
+        UIManager.openModal('modalAltaUsuario'); 
+        
+        // Pequeño retraso para asegurar que los elementos del modal estén en el DOM
+        setTimeout(() => { 
+            // Pre-llena los campos del formulario con los datos del usuario
+            document.getElementById('altaNombreCompleto').value = usuarioAEditar.nombreCompleto;
+            document.getElementById('altaNumControl').value = usuarioAEditar.numControl;
+            document.getElementById('altaNumControl').readOnly = true; // El No. Control/Alias no se puede cambiar al editar
+            document.getElementById('altaNumControl').classList.add("opacity-70", "cursor-not-allowed");
+            document.getElementById('altaCarrera').value = usuarioAEditar.carrera || "";
+            document.getElementById('altaRol').value = usuarioAEditar.rolKey;
+            
+            // Las contraseñas se dejan vacías; si el admin las llena, se actualizarán
+            document.getElementById('altaContrasena').placeholder = "Dejar vacío para no cambiar";
+            document.getElementById('altaConfirmarContrasena').placeholder = "Dejar vacío para no cambiar";
+            
+            // Cambia el título del modal y el texto del botón para reflejar la acción de edición
+            const modalTitulo = document.querySelector('#modalAltaUsuario h2'); 
+            if(modalTitulo) modalTitulo.textContent = "Editar Usuario";
+            const submitButton = document.querySelector('#formAltaUsuario button[type="submit"]'); 
+            if(submitButton) submitButton.textContent = "Guardar Cambios";
+
+            // Sobrescribe temporalmente el manejador del submit del formulario para que actualice en lugar de crear
+            AppState.DOMElements.formAltaUsuario.onsubmit = function(eventoActualizar) {
+                eventoActualizar.preventDefault(); // Previene el envío normal del formulario
+                // Recoge los valores actualizados del formulario
+                const nombreCompleto = document.getElementById('altaNombreCompleto').value.trim();
+                const carrera = document.getElementById('altaCarrera').value;
+                const rolSeleccionadoKey = document.getElementById('altaRol').value;
+                const nuevaContrasena = document.getElementById('altaContrasena').value;
+                const confirmarContrasena = document.getElementById('altaConfirmarContrasena').value;
+
+                // Validaciones
+                if (!nombreCompleto || !rolSeleccionadoKey) { UIManager.showToast('Nombre y Rol son requeridos.', 'alerta'); return; }
+                if (rolSeleccionadoKey === 'ESTUDIANTE' && !carrera) { UIManager.showToast('La carrera es requerida para estudiantes.', 'alerta'); return;}
+                if (nuevaContrasena && nuevaContrasena.length < 4) { UIManager.showToast('La nueva contraseña debe tener al menos 4 caracteres.', 'alerta'); return;}
+                if (nuevaContrasena && nuevaContrasena !== confirmarContrasena) { UIManager.showToast('Las nuevas contraseñas no coinciden.', 'error'); return;}
+                
+                // Encuentra el índice del usuario a actualizar en el array
+                const userIndex = AppState.usuariosRegistrados.findIndex(u => u.numControl === numControl);
+                if (userIndex > -1) {
+                    // Actualiza los datos del usuario
+                    AppState.usuariosRegistrados[userIndex].nombreCompleto = nombreCompleto;
+                    AppState.usuariosRegistrados[userIndex].carrera = rolSeleccionadoKey === 'ESTUDIANTE' ? carrera : null;
+                    AppState.usuariosRegistrados[userIndex].rolKey = rolSeleccionadoKey;
+                    if (nuevaContrasena) { // Solo actualiza la contraseña si se proporcionó una nueva
+                        AppState.usuariosRegistrados[userIndex].password = nuevaContrasena;
+                    }
+                    AppState.saveToLocalStorage('cecytem_usuarios', AppState.usuariosRegistrados); // Guarda los cambios
+                    UIManager.showToast("Usuario actualizado con éxito.", "ok");
+                    UIManager.closeModal('modalAltaUsuario'); // Cierra el modal
+                    AppRenderer.render(); // Re-renderiza la vista de gestión de usuarios
+                } else {
+                    UIManager.showToast("Error al actualizar: Usuario no encontrado.", "error");
+                }
+                 // Restaura el manejador de submit original (para altas nuevas) y el estado del campo No. Control
+                AppState.DOMElements.formAltaUsuario.onsubmit = AuthManager.handleAltaUsuarioSubmit; 
+                document.getElementById('altaNumControl').readOnly = false; 
+                document.getElementById('altaNumControl').classList.remove("opacity-70", "cursor-not-allowed");
+            };
+        }, 100); // Fin del setTimeout
+      },
+      /**
+       * Elimina un usuario del sistema. No permite que un administrador se elimine a sí mismo.
+       * Pide confirmación antes de la eliminación.
+       * @param {string} numControl - El número de control o alias del usuario a eliminar.
+       */
+      eliminarUsuarioAdmin(numControl) { 
+        // Impide que el admin actual se auto-elimine
+        if (AppState.usuario.numControl === numControl) { 
+            UIManager.showToast("No puedes eliminar tu propia cuenta.", "error"); 
+            return; 
+        }
+        if (confirm(`¿Estás seguro de que quieres eliminar al usuario ${numControl}? Esta acción no se puede deshacer.`)) { 
+            AppState.usuariosRegistrados = AppState.usuariosRegistrados.filter(u => u.numControl !== numControl); 
+            AppState.saveToLocalStorage('cecytem_usuarios', AppState.usuariosRegistrados); 
+            UIManager.showToast(`Usuario ${numControl} eliminado.`, "ok"); 
+            AppRenderer.render(); // Actualiza la vista
+        }
+      },
+
+      // --- Lógica de Generación de Documentos PDF/HTML ---
+      /**
+       * Genera el contenido HTML para un comprobante de pago.
+       * @param {object} pago - El objeto del historial de pagos.
+       * @param {object} solicitud - La solicitud de documento asociada a este pago.
+       * @param {object} estudiante - El objeto del estudiante que realizó el pago.
+       * @param {object} docInfo - Información sobre el tipo de documento pagado.
+       * @returns {string} Una cadena con el HTML formateado del comprobante.
+       */
+      generarHtmlComprobantePago(pago, solicitud, estudiante, docInfo) { 
+        const fechaPago = new Date(pago.fechaPago).toLocaleString('es-MX', { dateStyle: 'long', timeStyle: 'medium' });
+        const fechaSolicitud = new Date(solicitud.fechaSolicitud).toLocaleDateString('es-MX', { dateStyle: 'long' });
+        return `<div class="print-container p-8 bg-white text-black font-sans"> <header class="text-center mb-8"> <div class="flex items-center justify-center mb-2"> <div class="rounded-full bg-[var(--dci-morado)] p-2 mr-3"> <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg> </div> <h1 class="text-3xl font-bold text-[var(--dci-morado)]">CECYTEM Plantel X</h1> </div> <p class="text-sm text-gray-600">Comprobante de Pago Electrónico</p> </header> <section class="mb-6"> <h2 class="text-xl font-semibold text-gray-700 border-b pb-2 mb-3">Detalles del Pago</h2> <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm"> <div><strong>Folio de Pago:</strong> ${pago.referencia}</div> <div><strong>Fecha de Pago:</strong> ${fechaPago}</div> <div><strong>Monto Pagado:</strong> <span class="font-bold text-lg">$${pago.monto.toFixed(2)} MXN</span></div> <div><strong>Método de Pago:</strong> ${pago.metodoPago}</div> <div><strong>Estado del Pago:</strong> <span class="font-semibold ${pago.estadoPago === 'Aceptado' ? 'text-green-600' : 'text-orange-600'}">${pago.estadoPago}</span></div> </div> </section> <section class="mb-6"> <h2 class="text-xl font-semibold text-gray-700 border-b pb-2 mb-3">Información del Estudiante</h2> <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm"> <div><strong>Nombre:</strong> ${estudiante.nombreCompleto}</div> <div><strong>Número de Control:</strong> ${estudiante.numControl}</div> <div><strong>Carrera:</strong> ${estudiante.carrera || 'N/A'}</div> </div> </section> <section class="mb-6"> <h2 class="text-xl font-semibold text-gray-700 border-b pb-2 mb-3">Concepto del Pago</h2> <div class="text-sm"> <p><strong>Documento Solicitado:</strong> ${docInfo.nombre}</p> <p><strong>Folio de Solicitud:</strong> #${solicitud.id}</p> <p><strong>Fecha de Solicitud:</strong> ${fechaSolicitud}</p> </div> </section> <footer class="mt-10 pt-4 border-t text-center text-xs text-gray-500"> <p>Este es un comprobante generado por el sistema y no requiere firma ni sello para su validez digital.</p> <p>Conserve este comprobante para futuras aclaraciones.</p> <p class="mt-2">CECYTEM Portal Estudiantil &copy; ${new Date().getFullYear()}</p> </footer> </div>`;
+      },
+      /**
+       * Genera el contenido HTML para un documento oficial solicitado por el estudiante (ej. constancia, kárdex).
+       * El contenido específico del documento varía según el `docInfo.id`.
+       * @param {object} solicitud - La solicitud del documento.
+       * @param {object} estudiante - El objeto del estudiante.
+       * @param {object} docInfo - Información sobre el tipo de documento.
+       * @returns {string} Una cadena con el HTML formateado del documento.
+       */
+      generarHtmlDocumentoSolicitado(solicitud, estudiante, docInfo) { 
+        const fechaGeneracion = new Date().toLocaleDateString('es-MX', { dateStyle: 'long' });
+        let contenidoEspecifico = '';
+        if (docInfo.id === 'constancia') { contenidoEspecifico = `<p class="text-justify leading-relaxed my-6"> Por medio de la presente, se hace constar que el/la C. <strong>${estudiante.nombreCompleto}</strong>, con número de control <strong>${estudiante.numControl}</strong>, es alumno(a) regular de este plantel, inscrito(a) en la carrera de <strong>${estudiante.carrera || '[CARRERA NO ESPECIFICADA]'}</strong> durante el periodo escolar vigente. </p> <p class="text-justify leading-relaxed my-6"> Esta constancia se expide a petición del interesado(a), para los fines que a él/ella convengan. </p>`; }
+        else if (docInfo.id === 'kardex') { contenidoEspecifico = `<p class="text-justify leading-relaxed my-6"> A continuación, se presenta el historial académico del/la C. <strong>${estudiante.nombreCompleto}</strong>, con número de control <strong>${estudiante.numControl}</strong>, de la carrera de <strong>${estudiante.carrera || '[CARRERA NO ESPECIFICADA]'}</strong>. </p> <table class="w-full text-sm border-collapse border border-gray-400 my-6"> <thead> <tr class="bg-gray-100"> <th class="border border-gray-300 p-2">Clave Materia</th> <th class="border border-gray-300 p-2">Materia</th> <th class="border border-gray-300 p-2">Semestre</th> <th class="border border-gray-300 p-2">Calificación</th> <th class="border border-gray-300 p-2">Tipo Ex.</th> </tr> </thead> <tbody> <tr><td class="border border-gray-300 p-2">PROG-001</td><td class="border border-gray-300 p-2">Fundamentos de Programación</td><td class="border border-gray-300 p-2 text-center">1</td><td class="border border-gray-300 p-2 text-center">9</td><td class="border border-gray-300 p-2 text-center">ORD</td></tr> <tr><td class="border border-gray-300 p-2">MAT-001</td><td class="border border-gray-300 p-2">Cálculo Diferencial</td><td class="border border-gray-300 p-2 text-center">1</td><td class="border border-gray-300 p-2 text-center">8</td><td class="border border-gray-300 p-2 text-center">ORD</td></tr></tbody> </table> <p class="text-sm">Promedio General (Simulado): <strong>8.5</strong></p>`; }
+        else if (docInfo.id === 'boleta') { contenidoEspecifico = `<p class="text-justify leading-relaxed my-6"> Boleta de calificaciones parciales del/la C. <strong>${estudiante.nombreCompleto}</strong>, con número de control <strong>${estudiante.numControl}</strong>, de la carrera de <strong>${estudiante.carrera || '[CARRERA NO ESPECIFICADA]'}</strong>, correspondiente al periodo actual. </p> <table class="w-full text-sm border-collapse border border-gray-400 my-6"> <thead> <tr class="bg-gray-100"><th class="border border-gray-300 p-2">Materia</th><th class="border border-gray-300 p-2">Parcial 1</th><th class="border border-gray-300 p-2">Parcial 2</th><th class="border border-gray-300 p-2">Promedio Parcial</th></tr></thead><tbody><tr><td class="border border-gray-300 p-2">Programación Web</td><td class="border border-gray-300 p-2 text-center">9</td><td class="border border-gray-300 p-2 text-center">8</td><td class="border border-gray-300 p-2 text-center">8.5</td></tr></tbody></table>`;}
+        else { contenidoEspecifico = `<p class="my-6 text-center text-gray-500">[Contenido específico para ${docInfo.nombre} no definido en esta simulación]</p>`; }
+        return `<div class="print-container p-8 bg-white text-black font-serif"> <header class="text-center mb-10"> <div class="flex items-center justify-center mb-2"> <div class="rounded-full bg-[var(--dci-morado)] p-2 mr-3"> <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg> </div> <h1 class="text-3xl font-bold text-[var(--dci-morado)]">CECYTEM Plantel X</h1> </div> <p class="text-sm text-gray-700">COLEGIO DE ESTUDIOS CIENTÍFICOS Y TECNOLÓGICOS DEL ESTADO</p> <h2 class="text-2xl font-semibold text-gray-800 mt-4">${docInfo.nombre.toUpperCase()}</h2> </header> <section class="text-sm"> <p class="text-right mb-6">Folio Solicitud: #${solicitud.id} <br> Fecha de Generación: ${fechaGeneracion}</p> ${contenidoEspecifico} </section> <section class="mt-16 text-center"> <div class="inline-block"> <p class="mb-12">ATENTAMENTE</p> <p class="border-t border-gray-500 pt-2">___________________________________</p> <p class="font-semibold">Lic. Nombre Director(a) del Plantel</p> <p>Director(a) del CECYTEM Plantel X</p> </div> </section> <footer class="mt-12 pt-6 border-t text-center text-xs text-gray-500"> <p>Este documento es una representación digital y es válido para los fines indicados.</p> <p>Generado el ${fechaGeneracion} por el Portal Estudiantil CECYTEM.</p> </footer> </div>`;
+      },
+      /**
+       * Muestra un contenido HTML (generalmente un documento o recibo) en un modal.
+       * Proporciona un botón para imprimir (que puede usarse para "Guardar como PDF") y
+       * otro para descargar directamente como PDF usando la librería `html2pdf.js`.
+       * @param {string} htmlContent - El HTML del documento a mostrar.
+       * @param {string} nombreArchivoSugerido - El nombre que se sugerirá al descargar el PDF.
+       */
+      mostrarDocumentoEnModal(htmlContent, nombreArchivoSugerido) { 
+        AppState.DOMElements.reporteDetallePlantilla.innerHTML = htmlContent; // Inserta el HTML en el modal
+        UIManager.openModal('modalReporteDetalle'); // Abre el modal
+
+        // Crea y configura el botón para descargar como PDF
+        const btnHtml2Pdf = document.createElement('button');
+        btnHtml2Pdf.innerHTML = '<ion-icon name="document-outline" class="mr-2"></ion-icon>Descargar PDF';
+        btnHtml2Pdf.className = "absolute top-5 left-40 text-lg px-4 py-1.5 btn-accent rounded print:hidden"; // Posicionamiento y estilo
+        btnHtml2Pdf.onclick = () => {
+            // Selecciona el contenedor específico del documento para la conversión a PDF
+            const elementToPrint = AppState.DOMElements.reporteDetallePlantilla.querySelector('.print-container') || AppState.DOMElements.reporteDetallePlantilla;
+            html2pdf().set({ 
+                margin: [0.5,0.25,0.5,0.25], // Márgenes en pulgadas [arriba, izquierda, abajo, derecha]
+                filename: `${nombreArchivoSugerido}.pdf`, 
+                image: { type: 'jpeg', quality: 0.98 }, 
+                html2canvas: { scale: 2, useCORS: true, letterRendering: true }, 
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' } 
+            }).from(elementToPrint).save().then(() => { // Inicia la conversión y guardado
+                UIManager.showToast('PDF generado y descargado.', 'ok'); 
+                btnHtml2Pdf.remove(); // Elimina el botón de descarga después de usarlo
+            }).catch(err => { 
+                UIManager.showToast('Error al generar PDF.', 'error'); 
+                console.error("Error html2pdf:", err); 
+                btnHtml2Pdf.remove(); 
+            });
+        };
+        // Asegura que solo haya un botón de descarga PDF a la vez
+        const reporteContentDiv = document.getElementById('reporteDetalleContent');
+        const existingPdfBtn = reporteContentDiv.querySelector('.btn-accent'); 
+        if (existingPdfBtn) existingPdfBtn.remove(); // Elimina botones previos si existen
+        reporteContentDiv.appendChild(btnHtml2Pdf); // Añade el nuevo botón
+      },
+      /**
+       * Orquesta la generación y visualización (en modal) de un documento solicitado.
+       * Busca los datos necesarios (solicitud, estudiante, tipo de documento) y llama a las funciones de generación HTML y modal.
+       * @param {number} solicitudId - El ID de la solicitud del documento a generar.
+       */
+      generarYMostrarDocumentoSolicitado(solicitudId) { 
+        const solicitud = AppState.solicitudesDocumentos.find(s => s.id === solicitudId);
+        if (!solicitud) { UIManager.showToast("Solicitud no encontrada", "error"); return; }
+        const estudiante = AppState.usuariosRegistrados.find(u => u.numControl === solicitud.idEstudiante);
+        if (!estudiante) { UIManager.showToast("Estudiante no encontrado para esta solicitud", "error"); return; }
+        const docInfo = AppState.tiposDocumento.find(d => d.id === solicitud.tipoDocumentoId);
+        if (!docInfo) { UIManager.showToast("Tipo de documento no encontrado", "error"); return; }
+        
+        const htmlDoc = this.generarHtmlDocumentoSolicitado(solicitud, estudiante, docInfo); // Genera el HTML
+        const nombreArchivo = `${docInfo.nombre.replace(/\s+/g, '_')}_${estudiante.numControl}`; // Crea un nombre de archivo
+        this.mostrarDocumentoEnModal(htmlDoc, nombreArchivo); // Muestra en el modal
+      },
+      /**
+       * Orquesta la generación y visualización (en modal) de un recibo de pago.
+       * Busca los datos del pago, la solicitud asociada, el estudiante y el tipo de documento.
+       * @param {number} solicitudIdDelPago - El ID de la solicitud cuyo recibo de pago se va a generar.
+       */
+      generarYMostrarReciboPago(solicitudIdDelPago) { 
+        // Busca el pago en el historial que esté aceptado y corresponda a la solicitud
+        const pago = AppState.historialPagos.find(p => p.idSolicitud === solicitudIdDelPago && p.estadoPago === 'Aceptado');
+        if (!pago) { UIManager.showToast("Recibo de pago no encontrado o el pago no ha sido aceptado.", "alerta"); return; }
+        
+        const solicitud = AppState.solicitudesDocumentos.find(s => s.id === pago.idSolicitud);
+        if (!solicitud) { UIManager.showToast("Solicitud asociada al pago no encontrada.", "error"); return; }
+        const estudiante = AppState.usuariosRegistrados.find(u => u.numControl === solicitud.idEstudiante);
+        if (!estudiante) { UIManager.showToast("Estudiante asociado al pago no encontrado.", "error"); return; }
+        const docInfo = AppState.tiposDocumento.find(d => d.id === solicitud.tipoDocumentoId);
+        if (!docInfo) { UIManager.showToast("Documento asociado al pago no encontrado.", "error"); return; }
+        
+        const htmlRecibo = this.generarHtmlComprobantePago(pago, solicitud, estudiante, docInfo); // Genera el HTML
+        const nombreArchivo = `Recibo_Pago_Folio_${pago.referencia}`; // Crea un nombre de archivo
+        this.mostrarDocumentoEnModal(htmlRecibo, nombreArchivo); // Muestra en el modal
+      },
+
+      /**
+       * Muestra los detalles de un trámite específico (solicitud o pago) en un modal.
+       * Esta función es principalmente para la vista del estudiante.
+       * @param {string} tipo - Puede ser 'solicitud' o 'pago'.
+       * @param {number} id - El ID del trámite a visualizar.
+       */
+      verDetalleTramiteEstudiante(tipo, id) {
+          let titulo = "Detalle";
+          let contenidoHtml = "";
+          let solicitudObjeto; // Renombrado para evitar conflicto con la variable 'solicitud' en el scope superior
+
+          if (tipo === 'solicitud') {
+              solicitudObjeto = AppState.solicitudesDocumentos.find(s => s.id === id && s.idEstudiante === AppState.usuario.numControl);
+              if (solicitudObjeto) {
+                  const docInfo = AppState.tiposDocumento.find(d => d.id === solicitudObjeto.tipoDocumentoId);
+                  titulo = `Detalle Solicitud: ${docInfo.nombre} (Folio #${solicitudObjeto.id})`;
+                  let pagoInfo = '';
+                  if (solicitudObjeto.costo > 0) {
+                      pagoInfo = `<p><strong>Costo:</strong> $${solicitudObjeto.costo.toFixed(2)} MXN</p> 
+                                  <p><strong>Estado Pago:</strong> 
+                                      ${solicitudObjeto.estado === 'Pendiente de Pago' ? 'Pendiente' : 
+                                        (solicitudObjeto.pagoSimulado && !solicitudObjeto.pagoAutorizado ? 'En Revisión por Admin' : 
+                                        (solicitudObjeto.pagoAutorizado ? 'Autorizado' : 'Pagado'))}
+                                  </p>`;
+                  }
+                  contenidoHtml = `
+                      <p><strong>Documento:</strong> ${docInfo.nombre}</p> 
+                      <p><strong>Fecha Solicitud:</strong> ${new Date(solicitudObjeto.fechaSolicitud).toLocaleString('es-MX')}</p> 
+                      <p><strong>Estado General:</strong> ${solicitudObjeto.estado}</p> 
+                      ${pagoInfo}
+                      ${solicitudObjeto.archivoUrl && solicitudObjeto.estado === 'Entregado' ? `<p><strong>Archivo:</strong> <a href="#" onclick="AppLogic.generarYMostrarDocumentoSolicitado(${solicitudObjeto.id})" class="text-[var(--dci-morado)] hover:underline">Descargar ${docInfo.nombre}</a></p>` : ''} 
+                      ${solicitudObjeto.observacionesAdmin ? `<hr class="my-2 border-[var(--dci-glass-border-light)] dark:border-[var(--dci-glass-border-dark)]"><p><strong>Obs. Plantel:</strong><br><span class="text-dci-accent">${solicitudObjeto.observacionesAdmin}</span></p>` : ''}`;
+              }
+          } else if (tipo === 'pago') {
+              const pago = AppState.historialPagos.find(p => p.id === id && p.idEstudiante === AppState.usuario.numControl);
+              if (pago) {
+                  titulo = `Detalle Pago (Ref. ${pago.referencia})`;
+                  contenidoHtml = `<p><strong>Concepto:</strong> ${pago.concepto}</p> <p><strong>Referencia:</strong> ${pago.referencia}</p> <p><strong>Fecha Pago:</strong> ${new Date(pago.fechaPago).toLocaleString('es-MX')}</p> <p><strong>Monto:</strong> $${pago.monto.toFixed(2)} MXN</p> <p><strong>Estado:</strong> ${pago.estadoPago}</p> <p><strong>Método:</strong> ${pago.metodoPago}</p>`;
+              }
+          }
+          UIManager.openModal('modalDetalleTramite', { titulo, contenidoHtml });
+      },
+
+      /**
+       * Muestra los detalles de una solicitud de documento en un modal para que un administrador la gestione.
+       * Permite cambiar el estado, adjuntar un archivo (simulado) y añadir observaciones.
+       * También puede mostrar botones de acción específicos (ej: "Autorizar Pago").
+       * @param {number} solicitudId - El ID de la solicitud a visualizar y gestionar.
+       */
+      verDetalleSolicitudAdmin(solicitudId) {
+          const solicitud = AppState.solicitudesDocumentos.find(s => s.id === solicitudId);
+          if (!solicitud) { UIManager.showToast('Solicitud no encontrada.', 'error'); return; }
+
+          const docInfo = AppState.tiposDocumento.find(d => d.id === solicitud.tipoDocumentoId);
+          const estudianteInfo = AppState.usuariosRegistrados.find(u => u.numControl === solicitud.idEstudiante);
+
+          let titulo = `Gestionar Solicitud: ${docInfo.nombre} (Folio #${solicitud.id})`;
+          let contenidoHtml = `
+              <p><strong>Estudiante:</strong> ${solicitud.nombreEstudiante || estudianteInfo?.nombreCompleto || solicitud.idEstudiante} (${solicitud.idEstudiante})</p>
+              <p><strong>Documento:</strong> ${docInfo.nombre}</p>
+              <p><strong>Fecha Solicitud:</strong> ${new Date(solicitud.fechaSolicitud).toLocaleString('es-MX')}</p>
+              <p><strong>Estado Actual:</strong> ${solicitud.estado}</p>
+              <hr class="my-3 border-[var(--dci-glass-border-light)] dark:border-[var(--dci-glass-border-dark)]">
+              <p><strong>Costo:</strong> $${solicitud.costo.toFixed(2)} MXN</p>
+              <p><strong>Pago Simulado por Estudiante:</strong> ${solicitud.pagoSimulado ? 'Sí' : 'No'}</p>
+              <p><strong>Pago Autorizado por Admin:</strong> ${solicitud.pagoAutorizado ? 'Sí' : 'No'}</p>
+              <hr class="my-3 border-[var(--dci-glass-border-light)] dark:border-[var(--dci-glass-border-dark)]">
+              <div>
+                  <label class="block text-sm font-medium mb-1 text-dci-accent">Cambiar Estado:</label>
+                  <select id="adminNuevoEstadoSolicitud" class="w-full">
+                      <option value="Pendiente de Pago" ${solicitud.estado === 'Pendiente de Pago' ? 'selected' : ''}>Pendiente de Pago</option>
+                      <option value="Pago en Revisión" ${solicitud.estado === 'Pago en Revisión' ? 'selected' : ''}>Pago en Revisión</option>
+                      <option value="En Revisión" ${solicitud.estado === 'En Revisión' ? 'selected' : ''}>En Revisión (Documento)</option>
+                      <option value="Pendiente" ${solicitud.estado === 'Pendiente' ? 'selected' : ''}>Pendiente (General)</option>
+                      <option value="Listo para Entrega" ${solicitud.estado === 'Listo para Entrega' ? 'selected' : ''}>Listo para Entrega</option>
+                      <option value="Entregado" ${solicitud.estado === 'Entregado' ? 'selected' : ''}>Entregado</option>
+                      <option value="Rechazado" ${solicitud.estado === 'Rechazado' ? 'selected' : ''}>Rechazado</option>
+                      <option value="Cancelado" ${solicitud.estado === 'Cancelado' ? 'selected' : ''}>Cancelado</option>
+                  </select>
+              </div>
+              <div class="mt-3">
+                  <label class="block text-sm font-medium mb-1 text-dci-accent">URL Archivo Adjunto (si aplica, ej. PDF):</label>
+                  <input type="text" id="adminArchivoUrl" class="w-full" value="${solicitud.archivoUrl || ''}" placeholder="Ej: javascript:AppLogic.generarYMostrarDocumentoSolicitado(${solicitud.id})">
+              </div>
+              <div class="mt-3">
+                  <label class="block text-sm font-medium mb-1 text-dci-accent">Observaciones para el Estudiante:</label>
+                  <textarea id="adminObservaciones" class="w-full" rows="2" placeholder="Notas visibles para el estudiante">${solicitud.observacionesAdmin || ''}</textarea>
+              </div>
+          `;
+
+          let adminActions = [
+              { 
+                  label: "Guardar Cambios", 
+                  handler: () => AppLogic.guardarCambiosSolicitudAdmin(solicitud.id),
+                  class: "btn-main"
+              }
+          ];
+          // Si el pago está pendiente de autorización, se añade el botón para autorizarlo
+          if (solicitud.estado === 'Pago en Revisión' && !solicitud.pagoAutorizado) {
+               adminActions.unshift({ // .unshift() lo añade al principio del array
+                  label: "Autorizar Pago", 
+                  handler: () => AppLogic.autorizarPagoAdmin(solicitud.id),
+                  class: "btn-accent" // Botón con color de acento
+              });
+          }
+          UIManager.openModal('modalDetalleTramite', { titulo, contenidoHtml, adminActions });
+      },
+    };
+
+    // =================================================================================
+    //  RENDERIZADOR DE LA APLICACIÓN (AppRenderer)
+    //  Contiene las funciones que generan el HTML para cada módulo o vista de la aplicación.
+    // =================================================================================
+    const AppRenderer = {
+      /**
+       * Función central de renderizado.
+       * Actualiza la sección principal de contenido (`mainContent`) con el HTML
+       * correspondiente al módulo (`AppState.moduloActual`) que esté activo.
+       * También gestiona la animación de entrada de los módulos.
+       */
+      render() {
+          // Actualiza el estado visual (activo/inactivo) de los botones del sidebar
+          document.querySelectorAll('#sideNav button').forEach(btn=>{
+            const isActive = btn.dataset.mod === AppState.moduloActual;
+            btn.classList.toggle('active', isActive); // 'active' es manejada por CSS (dark/light mode)
+            btn.classList.toggle('font-semibold', isActive); // Pone en negrita el módulo activo
+          });
+          
+          const m = AppState.DOMElements.mainContent; // Contenedor principal del contenido
+          // Re-activa la animación de entrada para el nuevo módulo
+          m.classList.remove('module-anim'); 
+          void m.offsetWidth; // Truco para forzar el reflow y que la animación se reinicie
+          m.classList.add('module-anim');
+
+          // Obtiene la función de vista correspondiente al módulo actual
+          // Si no se encuentra una función específica, usa la del dashboard como fallback.
+          const viewFunction = this.views[AppState.moduloActual] || this.views.dashboard; 
+          m.innerHTML = viewFunction(); // Ejecuta la función de vista y asigna su HTML al contenedor
+      },
+      /**
+       * Objeto que almacena todas las funciones generadoras de HTML para cada vista (módulo) de la aplicación.
+       * El nombre de cada propiedad debe coincidir con el `id` de un módulo definido en `AppState.NAV_CONFIG`.
+       */
+      views: {
+        /** Vista: Panel principal o Dashboard. Muestra información diferente según el rol del usuario. */
+        dashboard() { 
+            if (AppState.usuario.rolKey === 'ESTUDIANTE') {
+                const notificacionesNoLeidas = AppState.notificaciones.filter(n => !n.leida && n.idEstudiante === AppState.usuario.numControl).length;
+                const solicitudesPendientes = AppState.solicitudesDocumentos.filter(s => s.idEstudiante === AppState.usuario.numControl && (s.estado === 'Pendiente' || s.estado === 'En Revisión' || s.estado === 'Pago en Revisión')).length;
+                const pagosPendientes = AppState.solicitudesDocumentos.filter(s => s.idEstudiante === AppState.usuario.numControl && s.costo > 0 && !s.pagoSimulado && s.estado === 'Pendiente de Pago').length;
+                return ` <h1 class="text-2xl font-bold mb-6" style="color: var(--dci-morado);">Bienvenido al Portal Estudiantil</h1> <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6"> <div class="glass p-5 flex flex-col items-center justify-center cursor-pointer hover:ring-2 hover:ring-[var(--dci-naranja-acento)] transition-all" onclick="AppCore.go('notificaciones')"> <ion-icon name="notifications-outline" class="text-5xl text-[var(--dci-naranja-acento)] mb-2"></ion-icon> <span class="text-3xl font-bold">${notificacionesNoLeidas}</span> <span class="text-sm text-dci-accent">Notificaciones Nuevas</span> </div> <div class="glass p-5 flex flex-col items-center justify-center cursor-pointer hover:ring-2 hover:ring-[var(--dci-ok)] transition-all" onclick="AppCore.go('consultarTramites')"> <ion-icon name="document-attach-outline" class="text-5xl text-[var(--dci-ok)] mb-2"></ion-icon> <span class="text-3xl font-bold">${solicitudesPendientes}</span> <span class="text-sm text-dci-accent">Solicitudes en Proceso</span> </div> <div class="glass p-5 flex flex-col items-center justify-center cursor-pointer hover:ring-2 hover:ring-[var(--dci-alerta)] transition-all" onclick="AppCore.go('realizarPagos')"> <ion-icon name="card-outline" class="text-5xl text-[var(--dci-alerta)] mb-2"></ion-icon> <span class="text-3xl font-bold">${pagosPendientes}</span> <span class="text-sm text-dci-accent">Pagos Pendientes</span> </div> </div> <h2 class="text-xl font-semibold mb-3" style="color: var(--dci-morado);">Accesos Rápidos</h2> <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"> ${AppState.NAV_CONFIG.filter(item => item.id !== 'dashboard' && item.id !== 'perfilConfig' && item.roles.includes('ESTUDIANTE')).map(item => `<button class="glass p-6 text-left hover:border-[var(--dci-morado)] transition-all rounded-xl" onclick="AppCore.go('${item.id}')"> <ion-icon name="${item.icon}" class="text-3xl text-[var(--dci-morado)] mb-2"></ion-icon> <h3 class="text-lg font-semibold">${item.label}</h3> <p class="text-xs text-dci-accent">Accede a ${item.label.toLowerCase()}</p> </button>`).join('')} </div> `;
+            } else if (AppState.usuario.rolKey === 'ADMIN') {
+                const totalSolicitudes = AppState.solicitudesDocumentos.length;
+                const pagosPorAutorizar = AppState.solicitudesDocumentos.filter(s => s.estado === 'Pago en Revisión').length;
+                const totalUsuarios = AppState.usuariosRegistrados.length;
+                return ` <h1 class="text-2xl font-bold mb-6" style="color: var(--dci-morado);">Panel de Administrador</h1> <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6"> <div class="glass p-5 flex flex-col items-center justify-center cursor-pointer hover:ring-2 hover:ring-[var(--dci-morado)] transition-all" onclick="AppCore.go('adminGestionSolicitudes')"> <ion-icon name="file-tray-stacked-outline" class="text-5xl text-[var(--dci-morado)] mb-2"></ion-icon> <span class="text-3xl font-bold">${totalSolicitudes}</span> <span class="text-sm text-dci-accent">Solicitudes Totales</span> </div> <div class="glass p-5 flex flex-col items-center justify-center cursor-pointer hover:ring-2 hover:ring-[var(--dci-alerta)] transition-all" onclick="AppCore.go('adminAutorizarPagos')"> <ion-icon name="shield-checkmark-outline" class="text-5xl text-[var(--dci-alerta)] mb-2"></ion-icon> <span class="text-3xl font-bold">${pagosPorAutorizar}</span> <span class="text-sm text-dci-accent">Pagos por Autorizar</span> </div> <div class="glass p-5 flex flex-col items-center justify-center cursor-pointer hover:ring-2 hover:ring-[var(--dci-ok)] transition-all" onclick="AppCore.go('adminGestionUsuarios')"> <ion-icon name="people-circle-outline" class="text-5xl text-[var(--dci-ok)] mb-2"></ion-icon> <span class="text-3xl font-bold">${totalUsuarios}</span> <span class="text-sm text-dci-accent">Usuarios Registrados</span> </div> </div> <h2 class="text-xl font-semibold mb-3" style="color: var(--dci-morado);">Módulos Administrativos</h2> <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"> ${AppState.NAV_CONFIG.filter(item => item.id !== 'dashboard' && item.id !== 'perfilConfig' && item.roles.includes('ADMIN')).map(item => `<button class="glass p-6 text-left hover:border-[var(--dci-morado)] transition-all rounded-xl" onclick="AppCore.go('${item.id}')"> <ion-icon name="${item.icon}" class="text-3xl text-[var(--dci-morado)] mb-2"></ion-icon> <h3 class="text-lg font-semibold">${item.label}</h3> <p class="text-xs text-dci-accent">Accede a ${item.label.toLowerCase()}</p> </button>`).join('')} </div> `;
+            }
+            return `<p>Dashboard no disponible para este rol.</p>`;
+        },
+        /** Vista: Permite a los estudiantes solicitar documentos. */
+        solicitarDocumentos() { 
+            let html = `<h1 class="text-2xl font-bold mb-6" style="color: var(--dci-morado);">Solicitud de Documentos</h1><div class="space-y-6">`;
+            AppState.tiposDocumento.forEach(doc => {
+                let disponibleAhora = doc.disponibleSiempre; 
+                if (!doc.disponibleSiempre && doc.diasDisponibles && doc.diasDisponibles.length > 0) { 
+                    const ahora = new Date();
+                    const horaActual = `${String(ahora.getHours()).padStart(2,'0')}:${String(ahora.getMinutes()).padStart(2,'0')}`;
+                    const diaSemanaActualJS = ahora.getDay(); 
+                    const diaSemanaLogica = diaSemanaActualJS === 0 ? 6 : diaSemanaActualJS - 1; 
+                    if (doc.diasDisponibles.includes(diaSemanaLogica) && horaActual >= doc.horaInicio && horaActual <= doc.horaFin) {
+                        disponibleAhora = true;
+                    }
+                }
+                const yaSolicitadoYpendiente = AppState.solicitudesDocumentos.find(s => s.idEstudiante === AppState.usuario.numControl && s.tipoDocumentoId === doc.id && (s.estado === 'Pendiente de Pago' || s.estado === 'Pago en Revisión' || s.estado === 'En Revisión' || s.estado === 'Pendiente'));
+                html += `<div class="glass p-5 rounded-lg"> <div class="flex flex-col sm:flex-row justify-between sm:items-center"> <div> <h2 class="text-xl font-semibold text-[var(--dci-morado)]">${doc.nombre}</h2> <p class="text-sm text-dci-accent">Costo: ${doc.costo > 0 ? `$${doc.costo.toFixed(2)} MXN` : 'Gratuito'}</p> <p class="text-xs mt-1 ${disponibleAhora && !yaSolicitadoYpendiente ? 'text-[var(--color-estado-ok)]' : 'text-[var(--color-estado-alerta)]'}">${doc.nota}</p> </div> <button class="btn-main mt-3 sm:mt-0 px-6 py-2 rounded-md ${(!disponibleAhora || yaSolicitadoYpendiente) ? 'opacity-50 cursor-not-allowed' : ''}" onclick="AppLogic.solicitarDocumento('${doc.id}', ${doc.costo})" ${(!disponibleAhora || yaSolicitadoYpendiente) ? 'disabled' : ''}> ${yaSolicitadoYpendiente ? 'Solicitud en Proceso' : 'Solicitar'} </button> </div> </div>`;
+            });
+            return html + `</div>`;
+        },
+        /** Vista: Permite a los estudiantes realizar (simular) pagos de documentos. */
+        realizarPagos() { 
+            let html = `<h1 class="text-2xl font-bold mb-6" style="color: var(--dci-morado);">Realizar Pagos</h1>`;
+            const solicitudesConAdeudo = AppState.solicitudesDocumentos.filter(s => s.idEstudiante === AppState.usuario.numControl && s.costo > 0 && !s.pagoSimulado && s.estado === 'Pendiente de Pago');
+            if (solicitudesConAdeudo.length === 0) return html + `<div class="glass p-5 rounded-lg text-center"><ion-icon name="checkmark-done-circle-outline" class="text-5xl text-[var(--dci-ok)] mb-3"></ion-icon><p class="text-lg">¡Felicidades! No tienes pagos pendientes de realizar.</p><p class="text-sm text-dci-accent mt-2">Si ya realizaste un pago, está en proceso de autorización.</p></div>`;
+            html += `<div class="space-y-4">`;
+            solicitudesConAdeudo.forEach(solicitud => {
+                const docInfo = AppState.tiposDocumento.find(d => d.id === solicitud.tipoDocumentoId);
+                html += `<div class="glass p-5 rounded-lg"> <h3 class="text-lg font-semibold text-[var(--dci-morado)]">Pago Pendiente: ${docInfo.nombre} (Folio #${solicitud.id})</h3> <p class="text-2xl font-bold my-2">$${solicitud.costo.toFixed(2)} MXN</p> <form onsubmit="AppLogic.simularPagoEstudiante(event, ${solicitud.id})"> <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4"> <div><label class="block text-sm font-medium mb-1 text-dci-accent">Número de Tarjeta</label><input type="text" placeholder="**** **** **** ****" required value="1234123412341234"></div> <div><label class="block text-sm font-medium mb-1 text-dci-accent">Nombre en Tarjeta</label><input type="text" placeholder="Nombre Apellido" required value="${AppState.usuario.nombreCompleto}"></div> <div><label class="block text-sm font-medium mb-1 text-dci-accent">Fecha Expiración (MM/AA)</label><input type="text" placeholder="MM/AA" required value="12/25"></div> <div><label class="block text-sm font-medium mb-1 text-dci-accent">CVV</label><input type="text" placeholder="***" required value="123"></div> </div> <button type="submit" class="btn-main w-full py-2.5 rounded-md">Pagar $${solicitud.costo.toFixed(2)} MXN</button> </form> </div>`;
+            });
+            return html + `</div>`;
+        },
+        /** Vista: Muestra al estudiante sus solicitudes de documentos y su historial de pagos. */
+        consultarTramites() {  
+            let html = `<h1 class="text-2xl font-bold mb-6" style="color: var(--dci-morado);">Mis Trámites</h1>`;
+            html += `<div class="mb-8"><h2 class="text-xl font-semibold mb-3 text-[var(--dci-morado)]">Solicitudes de Documentos</h2>`;
+            const misSolicitudes = AppState.solicitudesDocumentos.filter(s => s.idEstudiante === AppState.usuario.numControl).sort((a,b) => new Date(b.fechaSolicitud) - new Date(a.fechaSolicitud));
+            if (misSolicitudes.length === 0) { html += `<div class="glass p-5 rounded-lg text-center text-dci-accent"><ion-icon name="file-tray-outline" class="text-4xl mb-2"></ion-icon><p>No has realizado solicitudes.</p></div>`; }
+            else { html += `<div class="overflow-x-auto glass p-3 rounded-lg"><table class="w-full text-sm min-w-[600px]"><thead><tr> <th class="p-2 text-left">Folio</th><th class="p-2 text-left">Documento</th><th class="p-2 text-left">Fecha Sol.</th> <th class="p-2 text-left">Estado</th><th class="p-2 text-left">Costo</th><th class="p-2 text-center">Acción</th> </tr></thead><tbody>`; misSolicitudes.forEach(s => { const docInfo = AppState.tiposDocumento.find(d => d.id === s.tipoDocumentoId); let estadoClass = ''; if(s.estado === 'Entregado') estadoClass = 'text-[var(--color-estado-ok)]'; else if(s.estado === 'En Revisión' || s.estado === 'Pago en Revisión') estadoClass = 'text-[var(--color-estado-revision)]'; else if(s.estado === 'Pendiente de Pago') estadoClass = 'text-[var(--color-estado-alerta)]'; else if(s.estado === 'Cancelado' || s.estado === 'Rechazado') estadoClass = 'text-[var(--color-estado-error)]'; else estadoClass = 'text-[var(--color-estado-pendiente)]'; let costoTexto = `$${s.costo.toFixed(2)}`; if (s.costo > 0) { if (s.estado === 'Pendiente de Pago') costoTexto += ' (Pendiente)'; else if (s.pagoSimulado && !s.pagoAutorizado) costoTexto += ' (Pago en Revisión)'; else if (s.pagoAutorizado || s.pagado) costoTexto += ' (Pagado)';} else { costoTexto = '(N/A)';} let costoClass = 'text-dci-accent'; if(s.costo > 0 && s.estado === 'Pendiente de Pago') costoClass = 'text-[var(--color-estado-alerta)]'; else if(s.costo > 0 && s.pagoSimulado && !s.pagoAutorizado) costoClass = 'text-[var(--color-estado-revision)]'; else if(s.costo > 0 && (s.pagoAutorizado || s.pagado)) costoClass = 'text-[var(--color-estado-ok)]'; html += `<tr class="border-b border-[var(--dci-glass-border-light)] dark:border-[var(--dci-glass-border-dark)]"> <td class="p-2">#${s.id}</td> <td class="p-2">${docInfo.nombre}</td> <td class="p-2">${new Date(s.fechaSolicitud).toLocaleDateString('es-MX')}</td> <td class="p-2 font-semibold ${estadoClass}">${s.estado}</td> <td class="p-2 ${costoClass}">${costoTexto}</td> <td class="p-2 text-center"> ${s.estado === 'Entregado' && s.pagoAutorizado ? `<button onclick="AppLogic.generarYMostrarDocumentoSolicitado(${s.id})" class="text-[var(--dci-ok)] hover:opacity-70" title="Ver/Descargar Documento"><ion-icon name="document-text-outline" class="text-xl"></ion-icon></button>` : ''} <button onclick="AppLogic.verDetalleTramiteEstudiante('solicitud', ${s.id})" class="text-[var(--dci-morado)] hover:opacity-70 ml-2" title="Ver Detalles"><ion-icon name="eye-outline" class="text-xl"></ion-icon></button> ${s.costo > 0 && s.pagoAutorizado ? `<button onclick="AppLogic.generarYMostrarReciboPago(${s.id})" class="text-blue-500 hover:opacity-70 ml-2" title="Ver Recibo de Pago"><ion-icon name="receipt-outline" class="text-xl"></ion-icon></button>` : ''} </td></tr>`; }); html += `</tbody></table></div>`; } html += `</div>`;
+            html += `<div><h2 class="text-xl font-semibold mb-3 text-[var(--dci-morado)]">Historial de Pagos</h2>`; const misPagos = AppState.historialPagos.filter(p => p.idEstudiante === AppState.usuario.numControl).sort((a,b) => new Date(b.fechaPago) - new Date(a.fechaPago)); if (misPagos.length === 0) { html += `<div class="glass p-5 rounded-lg text-center text-dci-accent"><ion-icon name="wallet-outline" class="text-4xl mb-2"></ion-icon><p>No tienes pagos registrados.</p></div>`; } else { html += `<div class="overflow-x-auto glass p-3 rounded-lg"><table class="w-full text-sm min-w-[600px]"><thead><tr> <th class="p-2 text-left">Ref.</th><th class="p-2 text-left">Concepto</th><th class="p-2 text-left">Fecha Pago</th> <th class="p-2 text-left">Monto</th><th class="p-2 text-left">Estado</th><th class="p-2 text-center">Acción</th> </tr></thead><tbody>`; misPagos.forEach(p => { let estadoPagoClass = ''; if (p.estadoPago === 'Aceptado') estadoPagoClass = 'text-[var(--color-estado-ok)]'; else if (p.estadoPago === 'Rechazado') estadoPagoClass = 'text-[var(--color-estado-error)]'; else if (p.estadoPago === 'En Revisión Admin') estadoPagoClass = 'text-[var(--color-estado-revision)]'; else estadoPagoClass = 'text-[var(--color-estado-alerta)]'; html += `<tr class="border-b border-[var(--dci-glass-border-light)] dark:border-[var(--dci-glass-border-dark)]"> <td class="p-2">${p.referencia}</td> <td class="p-2">${p.concepto}</td> <td class="p-2">${new Date(p.fechaPago).toLocaleString('es-MX', {dateStyle: 'short', timeStyle: 'short'})}</td> <td class="p-2">$${p.monto.toFixed(2)}</td> <td class="p-2 font-semibold ${estadoPagoClass}">${p.estadoPago}</td> <td class="p-2 text-center"><button onclick="AppLogic.verDetalleTramiteEstudiante('pago', ${p.id})" class="text-[var(--dci-morado)] hover:opacity-70" title="Ver Detalles"><ion-icon name="eye-outline" class="text-xl"></ion-icon></button></td></tr>`; }); html += `</tbody></table></div>`; }
+            return html + `</div>`;
+        },
+        /** Vista: Muestra las notificaciones al usuario. Filtra según el rol (admin ve más). */
+        notificaciones() { 
+            let html = `<div class="flex justify-between items-center mb-6"> <h1 class="text-2xl font-bold" style="color: var(--dci-morado);">Notificaciones</h1> <button onclick="AppLogic.marcarTodasComoLeidas()" class="btn-accent px-3 py-1.5 rounded-md text-xs">Marcar todas como leídas</button> </div>`;
+            const misNotificaciones = AppState.notificaciones.filter(n => (AppState.usuario.rolKey === 'ADMIN' ? (n.esParaAdmin || n.idEstudiante === AppState.usuario.numControl) : (n.idEstudiante === AppState.usuario.numControl && !n.esParaAdmin))).sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
+            if (misNotificaciones.length === 0) { html += `<div class="glass p-5 rounded-lg text-center text-dci-accent"><ion-icon name="archive-outline" class="text-4xl mb-2"></ion-icon><p>No tienes notificaciones.</p></div>`; }
+            else { html += `<div class="space-y-3">`; misNotificaciones.forEach(n => { let iconName = 'information-circle-outline'; let iconColor = 'text-[var(--dci-morado)]'; if (n.tipo === 'ok') { iconName = 'checkmark-circle-outline'; iconColor = 'text-[var(--color-estado-ok)]'; } else if (n.tipo === 'error') { iconName = 'alert-circle-outline'; iconColor = 'text-[var(--color-estado-error)]'; } else if (n.tipo === 'alerta') { iconName = 'warning-outline'; iconColor = 'text-[var(--color-estado-alerta)]'; } let accionNotificacion = ''; if (n.accionUrl && n.accionUrl.startsWith('javascript:')) { accionNotificacion = `<button onclick="${n.accionUrl.substring(11)}" class="text-xs btn-main px-2 py-0.5 rounded mt-1">Ver Documento</button>`; } else if (n.accionModulo) { accionNotificacion = `<button onclick="AppCore.go('${n.accionModulo}')" class="text-xs btn-main px-2 py-0.5 rounded mt-1">Ir a ${n.accionModulo.replace('admin','').replace(/([A-Z])/g, ' $1').trim()}</button>`;} html += `<div class="glass p-4 rounded-lg flex items-start gap-3 ${n.leida ? 'opacity-60' : 'border-l-4 border-[var(--dci-morado)]'}">  <ion-icon name="${iconName}" class="text-3xl ${iconColor} flex-shrink-0 mt-0.5"></ion-icon>  <div class="flex-grow">  <p class="text-sm ${!n.leida ? 'font-semibold' : ''}">${n.mensaje}</p>  <p class="text-xs text-dci-accent mt-1">${new Date(n.fecha).toLocaleString('es-MX', {dateStyle:'medium', timeStyle:'short'})}</p>  ${accionNotificacion} </div>  ${!n.leida ? `<button onclick="AppLogic.marcarNotificacionComoLeida(${n.id})" class="text-xs text-dci-accent hover:text-[var(--color-estado-ok)] p-1 rounded-full" title="Marcar como leída"><ion-icon name="eye-outline" class="text-lg"></ion-icon></button>` : ''}  </div>`; }); html += `</div>`; }
+            return html;
+        },
+        /** Vista: Muestra el calendario del mes actual y los horarios de atención por área. */
+        calendarioAtencion() { 
+            let html = `<h1 class="text-2xl font-bold mb-6" style="color: var(--dci-morado);">Calendario y Horarios de Atención</h1> <p class="mb-4 text-dci-accent">Consulta los horarios de atención de las diferentes áreas del plantel.</p>`; const hoy = new Date(); html += `<div class="glass p-4 rounded-lg mb-6"> <h2 class="text-xl font-semibold text-center text-[var(--dci-morado)] mb-3">${hoy.toLocaleString('es-MX', {month: 'long', year: 'numeric'})}</h2> <div class="grid grid-cols-7 gap-1 text-center text-xs font-medium text-dci-accent mb-2"> <div>Do</div><div>Lu</div><div>Ma</div><div>Mi</div><div>Ju</div><div>Vi</div><div>Sá</div> </div> <div class="grid grid-cols-7 gap-1">`; const primerDiaMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1); const ultimoDiaMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0); const diasEnMes = ultimoDiaMes.getDate(); const diaInicioSemana = primerDiaMes.getDay(); for (let i = 0; i < diaInicioSemana; i++) { html += `<div></div>`; } for (let dia = 1; dia <= diasEnMes; dia++) { let claseDia = "p-2 h-20 border border-[var(--dci-glass-border-light)] dark:border-[var(--dci-glass-border-dark)] rounded-md text-xs flex flex-col items-center justify-start"; if (dia === hoy.getDate()) claseDia += " bg-[var(--dci-morado)] text-white font-bold"; html += `<div class="${claseDia}"><span>${dia}</span></div>`; } html += `</div></div>`; html += `<h3 class="text-lg font-semibold mt-6 mb-3 text-[var(--dci-morado)]">Horarios Generales por Área</h3> <div class="space-y-3">`; AppState.horariosAtencion.forEach(h => { html += `<div class="glass p-4 rounded-lg"> <p class="font-semibold">${h.area}</p> <p class="text-sm">Días: <span class="text-dci-accent">${h.dias}</span></p> <p class="text-sm">Horario: <span class="text-dci-accent">${h.horario}</span></p> ${h.nota ? `<p class="text-xs mt-1 text-[var(--color-estado-alerta)]">${h.nota}</p>` : ''} </div>`; });
+            return html + `</div>`;
+        },
+        /** Vista: Permite al usuario ver y editar su información de perfil y configurar opciones de la app. */
+        perfilConfig() { 
+            const e = AppState.usuario; const isEstudiante = e.rolKey === 'ESTUDIANTE';
+            return ` <h1 class="text-2xl font-bold mb-6" style="color: var(--dci-morado);">Mi Perfil y Configuración</h1> <div class="grid grid-cols-1 md:grid-cols-2 gap-6"> <div class="glass p-5 space-y-4"> <h2 class="text-xl font-semibold text-[var(--dci-morado)] mb-3">Datos del Usuario</h2> <div><label class="block text-sm font-medium mb-1 text-dci-accent">Nombre Completo:</label><input type="text" id="perfilNombre" value="${e.nombreCompleto}"></div> <div><label class="block text-sm font-medium mb-1 text-dci-accent">${isEstudiante ? 'No. Control:' : 'Alias Usuario:'}</label><input type="text" value="${e.numControl}" class="opacity-70" readonly title="No editable"></div> ${isEstudiante ? `<div><label class="block text-sm font-medium mb-1 text-dci-accent">Carrera:</label><input type="text" id="perfilCarrera" value="${e.carrera || ''}"></div>` : ''} ${isEstudiante ? `<div><label class="block text-sm font-medium mb-1 text-dci-accent">Estado de Datos:</label><p class="py-2 px-3 rounded-md ${e.datosCorrectos ? 'bg-green-500/20 text-[var(--color-estado-ok)]' : 'bg-red-500/20 text-[var(--color-estado-error)]'}">Tus datos están ${e.datosCorrectos ? 'CORRECTOS ✅' : 'INCORRECTOS ❌ (Acude a Control Escolar)'}</p></div>` : ''} <button onclick="AppLogic.guardarPerfil()" class="btn-main w-full py-2.5 rounded-md">Guardar Cambios </button> </div> <div class="glass p-5 space-y-4"> <h2 class="text-xl font-semibold text-[var(--dci-morado)] mb-3">Configuración App</h2> <div><label class="block text-sm font-medium mb-1 text-dci-accent">Tema Interfaz:</label><button onclick="UIManager.handleModeToggle()" class="btn-main w-full py-2 rounded-md flex items-center justify-center space-x-2"><ion-icon name="contrast-outline"></ion-icon><span>Cambiar a Modo ${AppState.temaOscuro ? 'Claro' : 'Oscuro'}</span></button></div> <div><label class="block text-sm font-medium mb-1 text-dci-accent">Notificaciones Email :</label><select id="configNotifEmail"><option value="si" selected>Activado</option><option value="no">Desactivado</option></select></div> <button onclick="AppLogic.guardarConfigApp()" class="btn-accent w-full py-2.5 rounded-md">Guardar Configuración</button> <div class="mt-4"> <label class="block text-sm font-medium mb-1 text-dci-accent">Datos de Demostración:</label> <button onclick="AuthManager.resetDemoData()" class="w-full px-4 py-2 rounded-md bg-[var(--dci-error)] text-white font-semibold hover:bg-red-700 transition flex items-center justify-center space-x-2"> <ion-icon name="refresh-circle-outline"></ion-icon> <span>Resetear Datos del Demo</span> </button> <p class="text-xs text-dci-accent mt-1">Esto eliminará todos los datos guardados y restaurará los valores iniciales.</p> </div> </div> </div>`;
+        },
+        /** Vista (Admin): Muestra todas las solicitudes de documentos para su gestión. */
+        adminGestionSolicitudes() { 
+            let html = `<h1 class="text-2xl font-bold mb-6" style="color: var(--dci-morado);">Gestión de Solicitudes de Documentos</h1>`; const todasLasSolicitudes = AppState.solicitudesDocumentos.sort((a,b) => new Date(b.fechaSolicitud) - new Date(a.fechaSolicitud)); if (todasLasSolicitudes.length === 0) { html += `<div class="glass p-5 rounded-lg text-center text-dci-accent"><ion-icon name="file-tray-full-outline" class="text-4xl mb-2"></ion-icon><p>No hay solicitudes registradas.</p></div>`; } else { html += `<div class="overflow-x-auto glass p-3 rounded-lg"><table class="w-full text-sm min-w-[800px]"><thead><tr> <th class="p-2 text-left">Folio</th> <th class="p-2 text-left">Estudiante</th> <th class="p-2 text-left">Documento</th> <th class="p-2 text-left">Fecha Sol.</th> <th class="p-2 text-left">Estado</th> <th class="p-2 text-left">Costo/Pago</th> <th class="p-2 text-center">Acciones</th> </tr></thead><tbody>`; todasLasSolicitudes.forEach(s => { const docInfo = AppState.tiposDocumento.find(d => d.id === s.tipoDocumentoId); const estudianteInfo = AppState.usuariosRegistrados.find(u => u.numControl === s.idEstudiante); let estadoClass = ''; if(s.estado === 'Entregado') estadoClass = 'text-[var(--color-estado-ok)]'; else if(s.estado === 'En Revisión' || s.estado === 'Pago en Revisión') estadoClass = 'text-[var(--color-estado-revision)]'; else if(s.estado === 'Pendiente de Pago') estadoClass = 'text-[var(--color-estado-alerta)]'; else if(s.estado === 'Cancelado' || s.estado === 'Rechazado') estadoClass = 'text-[var(--color-estado-error)]'; else estadoClass = 'text-[var(--color-estado-pendiente)]'; let costoPagoTexto = `$${s.costo.toFixed(2)}`; if (s.costo > 0) { if (s.estado === 'Pendiente de Pago') costoPagoTexto += ' (Pago Pendiente)'; else if (s.estado === 'Pago en Revisión') costoPagoTexto += ' (Autorizar Pago)'; else if (s.pagoAutorizado) costoPagoTexto += ' (Pagado y Autorizado)'; else if (s.pagado) costoPagoTexto += ' (Pagado)';} else { costoPagoTexto = '(Gratuito)';} html += `<tr class="border-b border-[var(--dci-glass-border-light)] dark:border-[var(--dci-glass-border-dark)]"> <td class="p-2">#${s.id}</td> <td class="p-2">${s.nombreEstudiante || estudianteInfo?.nombreCompleto || s.idEstudiante}</td> <td class="p-2">${docInfo.nombre}</td> <td class="p-2">${new Date(s.fechaSolicitud).toLocaleDateString('es-MX')}</td> <td class="p-2 font-semibold ${estadoClass}">${s.estado}</td> <td class="p-2">${costoPagoTexto}</td> <td class="p-2 text-center"> <button onclick="AppLogic.verDetalleSolicitudAdmin(${s.id})" class="text-[var(--dci-morado)] hover:opacity-70" title="Ver Detalles y Gestionar"><ion-icon name="eye-outline" class="text-xl"></ion-icon></button> ${(s.estado === 'Entregado' || s.estado === 'Listo para Entrega') ? `<button onclick="AppLogic.generarYMostrarDocumentoSolicitado(${s.id})" class="text-[var(--dci-ok)] hover:opacity-70 ml-2" title="Previsualizar Documento"><ion-icon name="document-text-outline" class="text-xl"></ion-icon></button>` : ''} ${s.costo > 0 && s.pagoAutorizado ? `<button onclick="AppLogic.generarYMostrarReciboPago(${s.id})" class="text-blue-500 hover:opacity-70 ml-2" title="Ver Recibo de Pago"><ion-icon name="receipt-outline" class="text-xl"></ion-icon></button>` : ''} </td></tr>`; }); html += `</tbody></table></div>`; }
+            return html;
+        },
+        /** Vista (Admin): Muestra los pagos que requieren autorización. */
+        adminAutorizarPagos() { 
+            let html = `<h1 class="text-2xl font-bold mb-6" style="color: var(--dci-morado);">Autorización de Pagos</h1>`;
+            const pagosPorAutorizar = AppState.solicitudesDocumentos.filter(s => s.estado === 'Pago en Revisión' && s.pagoSimulado && !s.pagoAutorizado).sort((a,b) => new Date(b.fechaSolicitud) - new Date(a.fechaSolicitud));
+            if (pagosPorAutorizar.length === 0) { html += `<div class="glass p-5 rounded-lg text-center text-dci-accent"><ion-icon name="shield-outline" class="text-4xl mb-2"></ion-icon><p>No hay pagos pendientes de autorización.</p></div>`; }
+            else { html += `<div class="overflow-x-auto glass p-3 rounded-lg"><table class="w-full text-sm min-w-[700px]"><thead><tr> <th class="p-2 text-left">Folio Sol.</th> <th class="p-2 text-left">Estudiante</th> <th class="p-2 text-left">Documento</th> <th class="p-2 text-left">Fecha Pago Sim.</th> <th class="p-2 text-left">Monto</th> <th class="p-2 text-center">Acciones</th> </tr></thead><tbody>`; pagosPorAutorizar.forEach(s => { const docInfo = AppState.tiposDocumento.find(d => d.id === s.tipoDocumentoId); const estudianteInfo = AppState.usuariosRegistrados.find(u => u.numControl === s.idEstudiante); const pagoInfoHistorial = AppState.historialPagos.find(p => p.idSolicitud === s.id && p.idEstudiante === s.idEstudiante && p.estadoPago === 'En Revisión Admin'); html += `<tr class="border-b border-[var(--dci-glass-border-light)] dark:border-[var(--dci-glass-border-dark)]"> <td class="p-2">#${s.id}</td> <td class="p-2">${s.nombreEstudiante || estudianteInfo?.nombreCompleto || s.idEstudiante}</td> <td class="p-2">${docInfo.nombre}</td> <td class="p-2">${pagoInfoHistorial ? new Date(pagoInfoHistorial.fechaPago).toLocaleString('es-MX') : 'N/A'}</td> <td class="p-2">$${s.costo.toFixed(2)}</td> <td class="p-2 text-center space-x-2"> <button onclick="AppLogic.autorizarPagoAdmin(${s.id})" class="btn-accent px-3 py-1 rounded-md text-xs">Autorizar</button> <button onclick="AppLogic.rechazarPagoAdmin(${s.id})" class="bg-[var(--dci-error)] text-white px-3 py-1 rounded-md text-xs hover:bg-red-700">Rechazar</button> </td></tr>`; }); html += `</tbody></table></div>`; }
+            return html;
+        },
+        /** Vista (Admin): Permite gestionar los usuarios del sistema (ver, editar, eliminar, crear). */
+        adminGestionUsuarios() { 
+            let html = `<div class="flex justify-between items-center mb-6"> <h1 class="text-2xl font-bold" style="color: var(--dci-morado);">Gestión de Usuarios</h1> <button onclick="UIManager.openModal('modalAltaUsuario')" class="btn-main px-4 py-2 rounded-lg flex items-center"> <ion-icon name="person-add-outline" class="text-xl mr-1"></ion-icon> Nuevo Usuario </button> </div>`;
+            if (AppState.usuariosRegistrados.length === 0) { html += `<div class="glass p-5 rounded-lg text-center text-dci-accent">No hay usuarios registrados.</div>`; }
+            else { html += `<div class="overflow-x-auto glass p-3 rounded-lg"><table class="w-full text-sm min-w-[600px]"><thead><tr> <th class="p-2 text-left">Num. Control / Alias</th> <th class="p-2 text-left">Nombre Completo</th> <th class="p-2 text-left">Rol</th> <th class="p-2 text-left">Carrera</th> <th class="p-2 text-center">Acciones</th> </tr></thead><tbody>`; AppState.usuariosRegistrados.forEach(usr => { html += `<tr class="border-b border-[var(--dci-glass-border-light)] dark:border-[var(--dci-glass-border-dark)]"> <td class="p-2">${usr.numControl}</td> <td class="p-2">${usr.nombreCompleto}</td> <td class="p-2">${AppState.ROLES[usr.rolKey]}</td> <td class="p-2">${usr.carrera || 'N/A'}</td> <td class="p-2 text-center"> <button onclick="AppLogic.editarUsuarioAdmin(${JSON.stringify(usr.numControl)})" class="text-[var(--dci-morado)] hover:opacity-70 mx-1" title="Editar Usuario"><ion-icon name="create-outline" class="text-lg"></ion-icon></button> <button onclick="AppLogic.eliminarUsuarioAdmin(${JSON.stringify(usr.numControl)})" class="text-[var(--dci-error)] hover:opacity-70 mx-1" title="Eliminar Usuario"><ion-icon name="trash-outline" class="text-lg"></ion-icon></button> </td></tr>`; }); html += `</tbody></table></div>`; }
+            return html;
+        },
+      }
+    };
+    
+    // =================================================================================
+    //  NÚCLEO DE LA APLICACIÓN (AppCore)
+    //  Coordina la inicialización de la aplicación y la navegación entre módulos.
+    // =================================================================================
+    const AppCore = {
+      /**
+       * Prepara la aplicación después de un inicio de sesión exitoso.
+       * Oculta la pantalla de login, muestra el contenedor principal de la aplicación,
+       * construye la barra lateral y actualiza la información del usuario visible.
+       * Finalmente, navega al primer módulo disponible para el rol del usuario.
+       */
+      initApp(){
+          AppState.DOMElements.loginScreen.style.display = "none"; // Oculta pantalla de login
+          AppState.DOMElements.appContainer.style.display = "flex"; // Muestra contenedor de la app
+          UIManager.showToast(`¡Bienvenido, ${AppState.usuario.nombreCompleto.split(' ')[0]}!`, 'ok'); // Saludo
+          UIManager.buildSidebar(); // Construye el menú lateral
+          UIManager.updateUserInfoSidebar(); // Muestra info del usuario en el sidebar
+          // Determina el primer módulo válido para el rol del usuario y navega a él
+          const primerModuloValido = AppState.NAV_CONFIG.find(item => item.roles.includes(AppState.usuario.rolKey));
+          this.go(primerModuloValido ? primerModuloValido.id : 'dashboard'); // Si no hay uno específico, va al dashboard
+      },
+      /**
+       * Cambia el módulo o vista actual de la aplicación.
+       * Actualiza `AppState.moduloActual` y luego llama a `AppRenderer.render()` para
+       * dibujar el nuevo contenido en la pantalla.
+       * @param {string} moduloId - El identificador del módulo al que se desea navegar.
+       */
+      go(moduloId){ 
+        AppState.moduloActual = moduloId; // Actualiza el estado del módulo actual
+        AppRenderer.render(); // Dispara el re-renderizado de la interfaz
+      },
+      /**
+       * Punto de entrada principal que inicializa toda la aplicación cuando el DOM está listo.
+       * Carga datos, cachea elementos del DOM, aplica el tema visual, configura los
+       * manejadores de eventos principales y verifica si hay una sesión de usuario activa.
+       */
+      init() {
+          AppState.initData();         // Carga los datos iniciales (de localStorage o por defecto)
+          UIManager.cacheDOMElements(); // Guarda referencias a elementos del DOM
+          UIManager.applyInitialTheme();  // Aplica el tema oscuro/claro
+
+          // Configuración de los manejadores de eventos principales
+          AppState.DOMElements.loginForm.onsubmit = AuthManager.handleLoginSubmit;
+          AppState.DOMElements.formAltaUsuario.onsubmit = AuthManager.handleAltaUsuarioSubmit;
+          AppState.DOMElements.sideNav.onclick = e => { 
+              let btn = e.target.closest('[data-mod]'); // Busca el botón de módulo más cercano
+              if(btn) this.go(btn.dataset.mod);       // Navega al módulo si se hizo clic en uno
+          };
+          document.getElementById('collapseSide').onclick = UIManager.handleCollapseSidebar;
+          AppState.DOMElements.modeToggleButton.onclick = UIManager.handleModeToggle;
+          AppState.DOMElements.logoutButton.onclick = AuthManager.logout;
+          
+          AuthManager.checkSession(); // Verifica si hay una sesión activa para iniciar la app o mostrar login
+      }
+    };
+
+    // --- INICIAR LA APLICACIÓN UNA VEZ QUE EL DOCUMENTO HTML HA CARGADO COMPLETAMENTE ---
+    document.addEventListener('DOMContentLoaded', () => {
+      AppCore.init();
+    });
+</script>
+</body>
+</html>
